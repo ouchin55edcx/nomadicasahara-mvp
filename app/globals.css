@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand */
+    --color-brand: 102 182 0; /* #66B600 */
+    --color-brand-dark: 85 154 0; /* #559A00 */
+    --color-brand-soft: 234 246 214; /* #EAF6D6 */
+
+    /* Neutrals */
+    --color-ink: 34 34 34; /* #222222 */
+    --color-ink-dark: 26 26 26; /* #1A1A1A */
+    --color-line: 229 229 229; /* #E5E5E5 */
+    --color-line-soft: 204 204 204; /* #CCCCCC hover underline */
+    --color-muted: 85 85 85; /* #555555 */
+    --color-surface: 247 247 247; /* #F7F7F7 */
+  }
+
+  body {
+    background-color: rgb(var(--color-surface));
+    color: rgb(var(--color-ink));
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: rgb(var(--color-brand));
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--color-brand));
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Buttons: square corners (rounded-sm), uppercase, green brand */
+  .btn {
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-sm px-6 py-3 text-[13px] font-semibold uppercase tracking-nav transition-colors;
+  }
+
+  .btn-primary {
+    @apply bg-brand text-white hover:bg-brand-dark;
+  }
+
+  .btn-secondary {
+    @apply border border-brand bg-white text-brand hover:bg-brand-soft;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex w-fit items-center rounded-sm bg-brand px-2 py-0.5 text-[12px] font-semibold uppercase leading-tight text-white;
+  }
+}
