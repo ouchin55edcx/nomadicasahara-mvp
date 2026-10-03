@@ -16,15 +16,26 @@ function filterHref(label: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-  return `/?filter=${filter}`;
+  const routes: Record<string, string> = {
+    "todas-las-excursiones": "/excursiones-marruecos",
+    desierto: "/excursiones-desierto-marruecos",
+    agafay: "/excursion-desierto-agafay",
+    zagora: "/excursion-desierto-zagora",
+    merzouga: "/excursion-desierto-merzouga",
+    "salidas-desde": "/excursiones-marrakech",
+    marrakech: "/excursiones-marrakech",
+    saidia: "/excursiones-saidia",
+    "excursiones-privadas": "/excursiones-privadas-marruecos",
+    "traslados-aeropuerto": "/traslados-aeropuerto-marrakech",
+    "cena-espectaculo": "/cena-espectaculo-marrakech",
+    hoteles: "/hoteles-marrakech",
+    "hammam-y-spa": "/hammam-spa-marrakech",
+  };
+
+  return routes[filter] ?? "/excursiones-marruecos";
 }
 
 const ITEMS: NavItem[] = [
-  {
-    label: "Todas las excursiones",
-    href: filterHref("Todas las excursiones"),
-    columns: [],
-  },
   {
     label: "Desierto",
     href: filterHref("Desierto"),
@@ -79,7 +90,7 @@ const script = {
 };
 
 export default function MainNav() {
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(-1);
   const [openMenu, setOpenMenu] = useState<number | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [openSection, setOpenSection] = useState<number | null>(null);
@@ -105,12 +116,11 @@ export default function MainNav() {
     };
     document.addEventListener("keydown", onKey);
 
-    const selectedFilter = new URLSearchParams(window.location.search).get("filter");
     const selectedIndex = ITEMS.findIndex(
       (it) =>
-        it.href === `/?filter=${selectedFilter}` ||
+        it.href === window.location.pathname ||
         it.columns.some((column) =>
-          column.links.some((link) => filterHref(link) === `/?filter=${selectedFilter}`),
+          column.links.some((link) => filterHref(link) === window.location.pathname),
         ),
     );
     if (selectedIndex >= 0) setActive(selectedIndex);
