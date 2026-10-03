@@ -35,7 +35,7 @@ export function generateMetadata({
   return {
     title: `Resumen — ${tour} | ${city} | Nomadica Sahara`,
     description:
-      "Resumen del viaje: alojamiento, transporte, servicios incluidos y condiciones de tu reserva.",
+      "Resumen de alojamiento, experiencias locales y condiciones de tu reserva en Marrakech.",
   };
 }
 
@@ -53,21 +53,6 @@ function InfoIcon() {
     >
       <circle cx="12" cy="12" r="9" />
       <path d="M12 11v5M12 7.8v.2" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function PlaneIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-      className={className}
-    >
-      <path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
     </svg>
   );
 }
@@ -173,47 +158,10 @@ const SUMMARY_HOTELS = [
   {
     name: "Kenzi Club Agdal Medina- All Inclusive",
     stars: 5,
-    stay: "Marrakech - 2 noches",
+    stay: "Marrakech - 6 noches",
     room: "1 Habitación De Lujo Con Vista Al Jardín | Todo incluido",
     image: "/images/tour-ciudades.jpg",
     alt: "Vista de Marrakech y su palmeral",
-  },
-  {
-    name: "Riad Al Madina",
-    stars: 3,
-    stay: "Essaouira - 3 noches",
-    room: "1 Habitación Estándar | Alojamiento y desayuno",
-    image: "/images/tour-costa.jpg",
-    alt: "Barcas de pesca en la costa de Essaouira",
-  },
-  {
-    name: "Kenzi Club Agdal Medina- All Inclusive",
-    stars: 5,
-    stay: "Marrakech - 1 noche",
-    room: "1 Habitación De Lujo Con Vista Al Jardín | Todo incluido",
-    image: "/images/tour-ciudades.jpg",
-    alt: "Vista de Marrakech y su palmeral",
-  },
-];
-
-const SUMMARY_FLIGHTS = [
-  {
-    route: "Madrid - Marrakech",
-    date: "16/11/2026",
-    from: "Madrid (MAD)",
-    fromTime: "22:40",
-    to: "Marrakech (RAK)",
-    toTime: "23:45",
-    duration: "2h 5m",
-  },
-  {
-    route: "Marrakech - Madrid",
-    date: "22/11/2026",
-    from: "Marrakech (RAK)",
-    fromTime: "9:20",
-    to: "Madrid (MAD)",
-    toTime: "12:20",
-    duration: "2h 0m",
   },
 ];
 
@@ -261,62 +209,15 @@ function ResumenCard() {
             </div>
           ))}
 
-          <h3 className="mt-6 text-[12px] font-semibold uppercase tracking-nav">
-            Transporte
-          </h3>
-          {SUMMARY_FLIGHTS.map((f) => (
-            <div
-              key={f.route}
-              className="mt-3 border-t border-line pt-3 first:border-t-0 first:pt-0"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[13px] font-semibold">
-                  {f.route}
-                  <span className="ml-2 text-[11px] font-normal text-muted">
-                    {f.date}
-                  </span>
-                </p>
-                <InfoIcon />
-              </div>
-              <div className="mt-2 flex items-center gap-3">
-                <div className="w-[120px] shrink-0">
-                  <p className="flex items-center gap-1.5 text-[13px] font-semibold leading-tight">
-                    <PlaneIcon className="text-amber-500" />
-                    {f.from}
-                  </p>
-                  <p className="mt-0.5 text-[12px] text-muted">{f.fromTime}</p>
-                </div>
-                <div className="flex flex-1 flex-col items-center">
-                  <div className="flex w-full items-center gap-2">
-                    <span className="h-px flex-1 bg-line" />
-                    <PlaneIcon className="text-brand" />
-                    <span className="h-px flex-1 bg-line" />
-                  </div>
-                  <p className="mt-1 text-[11px]">{f.duration}</p>
-                  <p className="text-[11px] text-muted">Vuelo directo</p>
-                </div>
-                <div className="w-[120px] shrink-0 text-right">
-                  <p className="text-[13px] font-semibold leading-tight">{f.to}</p>
-                  <p className="mt-0.5 text-[12px] text-muted">{f.toTime}</p>
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
 
         {/* Right: description, services, map, notes, itinerary */}
         <div>
-          <h3 className="text-[19px] font-bold">
-            “ Descubre Marrakech y Essaouira ”
-          </h3>
+          <h3 className="text-[19px] font-bold">Descubre Marrakech</h3>
           <p className="mt-3 text-[13.5px] leading-[1.65] text-ink">
-            Este viaje de 7 días combina la ciudad imperial de Marrakech con la
-            costa atlántica de Essaouira. Empezarás entre la medina, los zocos
-            y las palmeras al pie del Atlas, con su plaza de Jemaa el-Fna y sus
-            riads de patio interior, y terminarás frente al océano, entre las
-            murallas del siglo XVIII, las barcas del puerto y los cafés con
-            vistas al mar. Dos ciudades, dos ritmos y un mismo viaje, con
-            vuelos, hoteles y seguros incluidos.
+            Disfruta de una estancia de 7 días en Marrakech. Explora la medina,
+            los zocos, la plaza Jemaa el-Fna, los palacios y los jardines de la
+            ciudad, con alojamiento en Marrakech durante todo el viaje.
           </p>
 
           <h4 className="mt-5 text-[14px] font-semibold">
@@ -324,11 +225,9 @@ function ResumenCard() {
           </h4>
           <ul className="mt-2 space-y-1.5 text-[13.5px]">
             {[
-              "Vuelo de ida y vuelta.",
-              "Estancia en el hotel seleccionado en Marrakech.",
+              "Estancia de 6 noches en el hotel seleccionado en Marrakech.",
               "Régimen seleccionado en Marrakech.",
-              "Estancia en el hotel seleccionado en Essaouira.",
-              "Régimen seleccionado en Essaouira.",
+              "Atención local durante la estancia en Marrakech.",
               "Seguro de viaje.",
             ].map((s) => (
               <li key={s} className="flex gap-2">
@@ -343,10 +242,9 @@ function ResumenCard() {
           </h4>
           <ul className="mt-2 space-y-1.5 text-[13.5px]">
             {[
-              "Traslado desde el aeropuerto al hotel en Marrakech.",
-              "Traslado desde el hotel en Marrakech al hotel en Essaouira.",
-              "Traslado desde el hotel en Essaouira al hotel en Marrakech.",
-              "Traslado desde el hotel en Marrakech al aeropuerto.",
+              "Comidas no especificadas en el régimen seleccionado.",
+              "Entradas no indicadas como incluidas.",
+              "Traslados privados dentro de Marrakech.",
             ].map((s) => (
               <li key={s} className="flex gap-2 text-muted">
                 <span className="font-bold text-ink">✗</span>
@@ -389,9 +287,8 @@ function ResumenCard() {
               contrario, tendrán que compartir cama con un adulto.
             </p>
             <p>
-              - Consultar documentación necesaria para entrar a los destinos
-              visitados y para el tránsito en los países en los que se realicen
-              escalas aéreas.
+              - Las actividades y los servicios de este programa se realizan
+              en Marrakech.
             </p>
           </div>
 
@@ -400,23 +297,32 @@ function ResumenCard() {
           <div className="mt-2 space-y-3 text-[13px] leading-[1.6]">
             {[
               {
-                t: "Día 1: CIUDAD DE ORIGEN - MARRAKECH",
-                d: "Salida con destino Marrakech. Llegada y traslado desde el aeropuerto al hotel seleccionado en Marrakech por cuenta propia. Resto del día libre. Alojamiento.",
-              },
-              { t: "Día 2: MARRAKECH", d: "Día libre. Alojamiento." },
-              {
-                t: "Día 3: MARRAKECH - ESSAOUIRA",
-                d: "Traslado desde el hotel seleccionado en Marrakech al hotel seleccionado en Essaouira por cuenta propia. Resto del día libre. Alojamiento.",
-              },
-              { t: "Día 4: ESSAOUIRA", d: "Día libre. Alojamiento." },
-              { t: "Día 5: ESSAOUIRA", d: "Día libre. Alojamiento." },
-              {
-                t: "Día 6: ESSAOUIRA - MARRAKECH",
-                d: "Traslado desde el hotel seleccionado en Essaouira al hotel seleccionado en Marrakech por cuenta propia. Resto del día libre. Alojamiento.",
+                t: "Día 1: MARRAKECH",
+                d: "Inicio de la estancia, registro en el alojamiento y tiempo libre en Marrakech.",
               },
               {
-                t: "Día 7: CIUDAD DE ORIGEN",
-                d: "Traslado al aeropuerto por cuenta propia. Vuelo con destino a la ciudad de origen. Llegada. Fin del viaje y de nuestros servicios.",
+                t: "Día 2: MEDINA Y ZOCOS",
+                d: "Descubre la medina y sus zocos a tu ritmo. Alojamiento en Marrakech.",
+              },
+              {
+                t: "Día 3: JEMAA EL-FNA",
+                d: "Pasea por la plaza y disfruta del ambiente del centro histórico.",
+              },
+              {
+                t: "Día 4: PALACIOS Y JARDINES",
+                d: "Reserva el día para visitar los palacios y jardines de Marrakech.",
+              },
+              {
+                t: "Día 5: EXPERIENCIAS LOCALES",
+                d: "Elige una experiencia local y sigue descubriendo la ciudad.",
+              },
+              {
+                t: "Día 6: MARRAKECH A TU RITMO",
+                d: "Disfruta de un día libre en Marrakech. Alojamiento en la ciudad.",
+              },
+              {
+                t: "Día 7: FIN DE LA ESTANCIA",
+                d: "Últimas horas en Marrakech. Fin de nuestros servicios.",
               },
             ].map((day) => (
               <div key={day.t}>
@@ -443,10 +349,10 @@ export default function ResumenPage() {
         <div className="mt-5">
           <p className="text-[13px] text-muted">Marruecos, 7 dias</p>
           <h1 className="mt-1 text-[30px] font-bold leading-tight md:text-[34px]">
-            Marrakech y Essaouira
+            Marrakech
           </h1>
           <p className="mt-1 text-[15px] font-semibold">
-            A tu aire con estancia en playa
+            Experiencias locales y estancia en la ciudad
           </p>
         </div>
 

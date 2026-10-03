@@ -5,6 +5,7 @@ import Image from "next/image";
 import { CarFront, ChevronRight, Compass, Hotel, Info, MapPin, Sparkles, Utensils, Waves } from "lucide-react";
 import Header from "@/components/Header";
 import MainNav from "@/components/MainNav";
+import Footer from "@/components/Footer";
 
 /* ============================================================
    VIAJES EL CORTE INGLÉS — Landing page clone (single file)
@@ -31,6 +32,9 @@ const IMG = {
   washington: "/images/tour-ciudades.jpg",
   suiza: "/images/tour-atlas.jpg",
   crucero: "/images/banner-essaouira.jpg",
+  costasol: "/images/tour-costa.jpg",
+  costaluz: "/images/banner-essaouira.jpg",
+  lisboa: "/images/tour-ciudades.jpg",
 };
 
 const heroSlides = [
@@ -220,7 +224,6 @@ export default function LandingPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const activeHero = heroSlides[activeHeroIndex];
-  const activeYear = "26";
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -306,9 +309,7 @@ export default function LandingPage() {
               <small>{activeHero.category}</small>
               <div className="hero-brandline">
                 <h2>{activeHero.title}</h2>
-                <span className="hero-year"><span>20</span><b>{activeYear}</b></span>
               </div>
-              <span className="hero-compass" aria-hidden="true">✥</span>
               <p className="hero-tagline">PONEMOS RUMBO A TUS SUEÑOS</p>
             </div>
             <div className="hero-badges">
@@ -317,7 +318,7 @@ export default function LandingPage() {
           </div>
           <button type="button" className="hero-arrow right" aria-label="Imagen siguiente" onClick={() => moveHero(1)}>›</button>
         </section>
-        <div className="hero-subline">
+        <div className="hero-subline vci-divider">
           <span>{activeHero.subtitle}</span>
           <span className="dots" aria-label="Seleccionar imagen del hero">
             {heroSlides.map((slide, index) => <button key={slide.category} type="button" className={index === activeHeroIndex ? "on" : ""} aria-label={`Mostrar ${slide.category}`} aria-pressed={index === activeHeroIndex} onClick={() => setActiveHeroIndex(index)} />)}
@@ -494,46 +495,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ===== FOOTER ===== */}
-        <footer className="footer">
-          <div className="wrap">
-            <div className="footer-top">
-              {["SOBRE NOSOTROS","PREGUNTAS FRECUENTES","CONTACTO","AVISO LEGAL","CONDICIONES GENERALES","POLÍTICA DE PRIVACIDAD","POLÍTICA DE COOKIES"].map((l) => (
-                <a key={l} href="#">{l}</a>
-              ))}
-            </div>
-            <div className="footer-grid">
-              <div>
-                <div className="logo footer-logo">
-                  <span className="logo-viajes">Viajes</span> <span className="logo-eci">El Corte Inglés</span>
-                </div>
-                <div className="socials">
-                  <a href="#" aria-label="Facebook">f</a>
-                  <a href="#" aria-label="Twitter">𝕏</a>
-                  <a href="#" aria-label="Instagram">◎</a>
-                  <a href="#" aria-label="YouTube">▶</a>
-                  <a href="#" aria-label="TikTok">♪</a>
-                </div>
-              </div>
-              <div>
-                <h6>QUIÉNES SOMOS</h6>
-                <a href="#">Nuestra historia</a><a href="#">Agencias</a><a href="#">Trabaja con nosotros</a>
-              </div>
-              <div>
-                <h6>SERVICIOS</h6>
-                <a href="#">Vuelos</a><a href="#">Hoteles</a><a href="#">Cruceros</a><a href="#">Trenes</a>
-              </div>
-              <div>
-                <h6>VIAJES INTERNACIONALES</h6>
-                <a href="#">Grandes viajes</a><a href="#">Circuitos</a><a href="#">Multidestinos</a>
-              </div>
-              <div>
-                <select className="locale"><option>España - €</option></select>
-              </div>
-            </div>
-            <div className="footer-copy">© Viajes El Corte Inglés S.A. Todos los derechos reservados.</div>
-          </div>
-        </footer>
+        <Footer />
       </div>
     </>
   );
@@ -574,18 +536,14 @@ const css = `
   .hero-promo-head small { color:#183b5a; font-size:11px; font-weight:600; letter-spacing:2px; }
   .hero-brandline { display:flex; align-items:center; justify-content:center; gap:8px; margin:10px auto 0; }
   .hero-promo-head h2 { max-width:470px; margin:0; color:#08294d; font-family:'Bodoni 72','Didot','Bodoni MT','Times New Roman',serif; font-size:54px; font-weight:400; line-height:.88; text-align:right; }
-  .hero-year { display:flex; width:68px; height:68px; flex:none; flex-direction:column; align-items:center; justify-content:center; border:3px solid #0b2b4d; border-radius:50%; color:#0b2b4d; font-family:'Bodoni 72','Didot','Bodoni MT',serif; font-size:24px; line-height:.85; }
-  .hero-year span { font-size:15px; }
-  .hero-year b { font-weight:400; }
-  .hero-compass { position:absolute; top:12px; right:12%; display:flex; width:48px; height:48px; align-items:center; justify-content:center; border:2px solid #0b2b4d; border-radius:50%; color:#0b2b4d; font-size:31px; line-height:1; }
   .hero-tagline { margin:12px 0 0; color:#163b59; font-size:13px; font-weight:500; letter-spacing:3px; }
   .hero-badges { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:3px; }
   .hero-badge { display:flex; min-height:125px; flex-direction:column; align-items:center; justify-content:center; background:#59b900; padding:10px 5px; text-align:center; color:#fff; }
   .hero-badge b { display:block; font-size:24px; line-height:1.05; }
   .hero-badge span { margin-top:3px; font-size:12px; line-height:1.2; }
-  .hero-subline { position:relative; display:flex; height:50px; justify-content:center; align-items:center; max-width:none; margin:0; padding:0 16px; background:#fff; color:#092b4d; font-size:14px; font-weight:500; letter-spacing:2px; text-align:center; }
+  .hero-subline { position:relative; display:flex; min-height:66px; height:auto; justify-content:center; align-items:center; max-width:none; margin:0; padding:0 16px 16px; border-bottom:1px solid #e5e7eb; background:#fff; color:#092b4d; font-size:14px; font-weight:500; letter-spacing:2px; text-align:center; }
   .hero-subline > span:first-child { max-width:calc(100% - 120px); padding:0 48px; background:#fff; clip-path:polygon(0 0,100% 0,90% 100%,10% 100%); }
-  .dots { position:absolute; right:16px; top:50%; transform:translateY(-50%); white-space:nowrap; }
+  .dots { position:absolute; right:16px; top:calc(50% - 8px); transform:translateY(-50%); white-space:nowrap; }
   .dots button { display:inline-block; width:10px; height:10px; border-radius:50%; background:#c7c9c8; margin-left:7px; padding:0; vertical-align:middle; }
   .dots button.on { background:#676b69; }
   @media (prefers-reduced-motion: reduce) { .hero-image { animation:none; } }
@@ -773,20 +731,6 @@ const css = `
   .news-form input { width:320px; max-width:90%; padding:12px; border:1px solid #cfe3c4; font-size:13px; }
   .news-check { display:block; margin-top:12px; font-size:12px; color:#666; }
 
-  /* Footer */
-  .footer { background-color:#111; background-image:linear-gradient(180deg,rgba(12,20,19,.88),rgba(12,20,19,.96)),url('/images/banner-kasbahs.jpg'); background-position:center; background-size:cover; color:#bbb; padding-top:28px; font-size:12px; }
-  .footer-top { display:flex; flex-wrap:wrap; gap:20px; padding-bottom:20px; border-bottom:1px solid #2a2a2a; font-weight:600; letter-spacing:.4px; }
-  .footer-top a:hover { color:#fff; }
-  .footer-grid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr; gap:24px; padding:28px 0; }
-  .footer-grid h6 { color:#fff; font-size:12px; margin-bottom:12px; letter-spacing:.5px; }
-  .footer-grid a { display:block; padding:4px 0; } .footer-grid a:hover { color:#fff; }
-  .footer-logo .logo-viajes, .footer-logo .logo-eci { color:#fff; }
-  .socials { display:flex; gap:10px; margin-top:14px; }
-  .socials a { width:32px; height:32px; border:1px solid #444; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#bbb; }
-  .socials a:hover { background:#60B61A; border-color:#60B61A; color:#fff; }
-  .locale { background:#222; color:#bbb; border:1px solid #444; padding:9px 12px; font-size:12px; width:100%; }
-  .footer-copy { padding:16px 0 28px; border-top:1px solid #2a2a2a; font-size:11px; color:#777; }
-
   @media (max-width:1000px) {
     .grid-6 { grid-template-columns:repeat(3,1fr); }
     .journey-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
@@ -801,7 +745,6 @@ const css = `
     .hero { height:360px; }
     .hero-promo { padding:24px 5%; }
     .hero-promo-head h2 { font-size:42px; }
-    .hero-year { width:58px; height:58px; font-size:21px; }
     .hero-badge { min-height:104px; }
     .hero-badge b { font-size:18px; }
     .hero-badge span { font-size:10px; }
@@ -810,7 +753,6 @@ const css = `
     .marketplace-product-description { font-size:12px; }
     .marketplace-product-price b { font-size:26px; }
     .marketplace-product-footer .btn-reservar { font-size:11px; }
-    .footer-grid { grid-template-columns:1fr 1fr; }
   }
   @media (max-width:600px) {
     .grid-6, .grid-4, .grid-3 { grid-template-columns:1fr; }
@@ -859,16 +801,13 @@ const css = `
     .hero-promo-head small { font-size:9px; }
     .hero-brandline { margin-top:7px; }
     .hero-promo-head h2 { max-width:270px; font-size:35px; text-align:center; }
-    .hero-year { width:48px; height:48px; border-width:2px; font-size:18px; }
-    .hero-year span { font-size:12px; }
-    .hero-compass { top:0; right:4px; width:34px; height:34px; font-size:22px; }
     .hero-tagline { margin-top:6px; font-size:9px; letter-spacing:2px; }
     .hero-badges { gap:3px; }
     .hero-badge { min-height:68px; padding:6px 3px; }
     .hero-badge b { font-size:14px; }
     .hero-badge span { font-size:9px; }
     .hero-arrow { top:105px; width:42px; height:48px; font-size:24px; }
-    .hero-subline { height:46px; font-size:10px; letter-spacing:1px; }
+    .hero-subline { min-height:62px; font-size:10px; letter-spacing:1px; }
     .hero-subline > span:first-child { max-width:calc(100% - 86px); padding:0 15px; }
     .dots { right:8px; }
     .dots button { width:7px; height:7px; margin-left:4px; }

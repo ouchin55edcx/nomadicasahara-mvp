@@ -1,29 +1,14 @@
 import Image from "next/image";
 
 const DAYS = [
-  { n: 1, date: "LU, 16 NOV.", flight: "MAD - RAK", hotel: "Marrakech" },
-  { n: 2, date: "MA, 17 NOV.", flight: null, hotel: "Marrakech" },
-  { n: 3, date: "MI, 18 NOV.", flight: null, hotel: "Essaouira" },
-  { n: 4, date: "JU, 19 NOV.", flight: null, hotel: "Essaouira" },
-  { n: 5, date: "VI, 20 NOV.", flight: null, hotel: "Essaouira" },
-  { n: 6, date: "SÁ, 21 NOV.", flight: null, hotel: "Marrakech" },
-  { n: 7, date: "DO, 22 NOV.", flight: "RAK - MAD", hotel: null },
+  { n: 1, date: "LU, 16 NOV.", hotel: "Marrakech" },
+  { n: 2, date: "MA, 17 NOV.", hotel: "Marrakech" },
+  { n: 3, date: "MI, 18 NOV.", hotel: "Marrakech" },
+  { n: 4, date: "JU, 19 NOV.", hotel: "Marrakech" },
+  { n: 5, date: "VI, 20 NOV.", hotel: "Marrakech" },
+  { n: 6, date: "SÁ, 21 NOV.", hotel: "Marrakech" },
+  { n: 7, date: "DO, 22 NOV.", hotel: "Marrakech" },
 ];
-
-function PlaneIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-      className={className}
-    >
-      <path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
-    </svg>
-  );
-}
 
 function BedIcon() {
   return (
@@ -44,25 +29,16 @@ function BedIcon() {
   );
 }
 
-/** Hero photo with the diagonal split (kasbah + Essaouira). */
+/** Hero photo for the Marrakech itinerary. */
 export function TourGallery() {
   return (
     <div className="relative h-[240px] overflow-hidden rounded-sm md:h-[320px]">
       <Image
-        src="/images/banner-kasbahs.jpg"
-        alt="Fortalezas de adobe en la ruta de las kasbahs del sur de Marruecos"
+        src="/images/tour-ciudades.jpg"
+        alt="Arquitectura de Marrakech"
         fill
         priority
         className="object-cover"
-        sizes="(max-width: 1200px) 100vw, 1200px"
-      />
-      <Image
-        src="/images/banner-essaouira.jpg"
-        alt="Vista del puerto y las murallas de Essaouira sobre el Atlántico"
-        fill
-        priority
-        className="object-cover"
-        style={{ clipPath: "polygon(42% 0, 100% 0, 100% 100%, 24% 100%)" }}
         sizes="(max-width: 1200px) 100vw, 1200px"
       />
     </div>
@@ -87,18 +63,8 @@ export function TourItinerary() {
               </span>
             </div>
             <div className="space-y-2 px-3 py-3 text-[13px]">
-              {d.flight && (
-                <p className="flex items-center gap-2">
-                  <PlaneIcon className="text-muted" />
-                  {d.flight}
-                </p>
-              )}
               {d.hotel && (
-                <p
-                  className={`flex items-center gap-2 font-medium ${
-                    d.hotel === "Essaouira" ? "text-brand-dark" : "text-amber-600"
-                  }`}
-                >
+                <p className="flex items-center gap-2 font-medium text-amber-600">
                   <BedIcon />
                   {d.hotel}
                 </p>

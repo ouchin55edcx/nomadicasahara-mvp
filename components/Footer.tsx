@@ -1,3 +1,5 @@
+import BrandLogo from "@/components/BrandLogo";
+
 export default function Footer() {
   const empresa = ["Quiénes somos", "Hazte socio", "Trabaja con nosotros"];
   const enlaces = [
@@ -31,21 +33,8 @@ export default function Footer() {
       <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-10 px-3 py-12 sm:grid-cols-2 lg:grid-cols-4">
         {/* Brand */}
         <div>
-          <a href="#" className="flex items-center gap-2.5">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-              className="text-brand"
-            >
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.6" />
-              <path d="M15.5 8.5l-2.2 5-5 2.2 2.2-5 5-2.2z" fill="currentColor" />
-            </svg>
-            <span className="text-lg font-semibold tracking-tight">
-              Nomadica <span className="text-brand">Sahara</span>
-            </span>
+          <a href="/" className="inline-flex items-center">
+            <BrandLogo variant="footer" />
           </a>
           <p className="mt-3 text-sm leading-[1.6] text-white/60">
             Viajes de autor por Marruecos desde 2012. Desierto, medinas y
