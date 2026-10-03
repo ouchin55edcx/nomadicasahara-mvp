@@ -26,6 +26,25 @@ const config: Config = {
       letterSpacing: {
         nav: "0.08em",
       },
+      keyframes: {
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "collapsible-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-collapsible-content-height)" },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 150ms ease-out",
+        "accordion-up": "accordion-up 150ms ease-out",
+        "collapsible-down": "collapsible-down 150ms ease-out",
+      },
       borderRadius: {
         DEFAULT: "2px",
       },

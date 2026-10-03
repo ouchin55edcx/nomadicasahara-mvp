@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Header from "@/components/Header";
 import MainNav from "@/components/MainNav";
@@ -5,7 +6,24 @@ import Hero from "@/components/Hero";
 import SearchBar from "@/components/SearchBar";
 import TourCard from "@/components/TourCard";
 import Footer from "@/components/Footer";
-import { featuredTours, moreTours } from "@/lib/tours";
+import CtaBanner from "@/components/landing/CtaBanner";
+import FaqAccordion from "@/components/landing/FaqAccordion";
+import JsonLd from "@/components/landing/JsonLd";
+import MobileCtaBar from "@/components/landing/MobileCtaBar";
+import TrustStrip from "@/components/landing/TrustStrip";
+import { allContent } from "@/content/landing/all";
+import { landingMetadata } from "@/lib/landing-seo";
+import { themes } from "@/lib/themes";
+import { getHomepageContent } from "@/lib/tours";
+
+export const metadata: Metadata = landingMetadata({
+  title: allContent.seo.title,
+  description: allContent.seo.description,
+  path: allContent.slug,
+  image: allContent.seo.ogImage,
+  keywords: allContent.seo.keywords,
+  updatedAt: allContent.seo.updatedAt,
+});
 
 const banners = [
   {
@@ -60,175 +78,209 @@ const condiciones = [
   },
 ];
 
-export default function Home() {
+export default function Home({
+  searchParams,
+}: {
+  searchParams?: { filter?: string };
+}) {
+  const homepageContent = getHomepageContent(searchParams?.filter);
+
   return (
     <>
       <Header />
       <MainNav />
 
-      <main className="mx-auto w-full max-w-[1200px] px-3 pb-8">
-        <Hero />
-        <SearchBar />
+      <main>
+        <div className="mx-auto w-full max-w-[1200px] px-3 pb-8">
+          <Hero
+            image={homepageContent.heroImage}
+            alt={homepageContent.heroAlt}
+            title={homepageContent.heroTitle}
+          />
+          <SearchBar />
 
-        {/* Destacados */}
-        <section className="mt-8">
-          <h2 className="mb-4 text-2xl font-medium">Destacados</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredTours.map((t) => (
-              <TourCard key={t.title} t={t} />
-            ))}
-          </div>
-        </section>
+          {/* Destacados */}
+          <section className="mt-8">
+            <h2 className="mb-4 text-2xl font-medium">
+              {homepageContent.activitiesTitle}
+            </h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {homepageContent.featuredTours.map((t) => (
+                <TourCard key={t.title} t={t} />
+              ))}
+            </div>
+          </section>
 
-        {/* Más experiencias */}
-        <section className="mt-10">
-          <h2 className="mb-4 text-2xl font-medium">Más experiencias</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {moreTours.map((t) => (
-              <TourCard key={t.title} t={t} />
-            ))}
-          </div>
-        </section>
+          {/* Más experiencias */}
+          <section className="mt-10">
+            <h2 className="mb-4 text-2xl font-medium">Más experiencias</h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {homepageContent.moreTours.map((t) => (
+                <TourCard key={t.title} t={t} />
+              ))}
+            </div>
+          </section>
 
-        {/* Editorial banners */}
-        <section className="mt-10 rounded-sm border border-line bg-white p-4 md:p-6">
-          <h2 className="mb-4 text-2xl font-medium">
-            Marruecos: desierto, medinas y costa atlántica
-          </h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {banners.map((b) => (
-              <a
-                key={b.title}
-                href="#"
-                className="group relative block h-52 overflow-hidden rounded-sm md:h-64"
-              >
-                <Image
-                  src={b.image}
-                  alt={b.alt}
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, 560px"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/15 to-transparent" />
-                <p className="absolute bottom-4 left-4 text-lg font-semibold uppercase tracking-nav text-white md:text-xl">
-                  {b.title}
-                </p>
-              </a>
-            ))}
-          </div>
-        </section>
+          {/* Editorial banners */}
+          <section className="mt-10 rounded-sm border border-line bg-white p-4 md:p-6">
+            <h2 className="mb-4 text-2xl font-medium">
+              Marruecos: desierto, medinas y costa atlántica
+            </h2>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {banners.map((b) => (
+                <a
+                  key={b.title}
+                  href="#"
+                  className="group relative block h-52 overflow-hidden rounded-sm md:h-64"
+                >
+                  <Image
+                    src={b.image}
+                    alt={b.alt}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    sizes="(max-width: 768px) 100vw, 560px"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/15 to-transparent" />
+                  <p className="absolute bottom-4 left-4 text-lg font-semibold uppercase tracking-nav text-white md:text-xl">
+                    {b.title}
+                  </p>
+                </a>
+              ))}
+            </div>
+          </section>
 
-        {/* SEO / editorial block */}
-        <section className="mt-10 grid grid-cols-1 gap-6 rounded-sm border border-line bg-white p-6 lg:grid-cols-[280px_1fr]">
-          <h2 className="text-xl font-medium uppercase leading-snug lg:text-2xl">
-            Marruecos, donde el desierto se encuentra con la costa
-          </h2>
-          <div className="space-y-3 text-[13px] leading-[1.6] text-muted">
-            <p>
-              <strong className="font-semibold text-ink">Marrakech</strong> es
-              la puerta de entrada al sur de Marruecos. Su{" "}
-              <strong className="font-semibold text-ink">medina</strong>,
-              declarada Patrimonio de la Humanidad por la UNESCO, concentra{" "}
-              <strong className="font-semibold text-ink">zocos</strong>{" "}
-              artesanos, el palacio Bahía y la plaza de Jemaa el-Fna, que cada
-              tarde se llena de músicos y puestos de comida. Dormir en un{" "}
-              <strong className="font-semibold text-ink">riad</strong> con patio
-              interior es la mejor forma de conocer la ciudad desde dentro.
-            </p>
-            <p>
-              El <strong className="font-semibold text-ink">Sáhara</strong>{" "}
-              marroquí se vive en las dunas del Erg Chebbi, junto a Merzouga:
-              travesías en dromedario al atardecer, noches en{" "}
-              <strong className="font-semibold text-ink">jaima</strong> bajo uno
-              de los cielos más limpios de África y amaneceres que tiñen la
-              arena de color cobre. Nuestros campamentos combinan confort y
-              hospitalidad bereber.
-            </p>
-            <p>
-              El <strong className="font-semibold text-ink">Alto Atlas</strong>{" "}
-              es el gran territorio de trekking del norte de África. Desde el
-              valle de Imlil parten rutas entre aldeas bereberes de adobe,
-              nogales y terrazas, con la opción de coronar el Toubkal (4.167 m),
-              siempre acompañados por guías de montaña titulados.
-            </p>
-            <p>
-              Las <strong className="font-semibold text-ink">ciudades
-              imperiales</strong> —Fez, Meknés y Rabat— conservan mil años de
-              historia. La medina de Fez el-Bali es la mayor zona urbana
-              peatonal del mundo, y sus madrasas, curtidores y talleres de
-              cerámica mantienen vivos oficios centenarios.
-            </p>
-            <p>
-              En el Atlántico,{" "}
-              <strong className="font-semibold text-ink">Essaouira</strong>{" "}
-              combina murallas portuguesas, un puerto pesquero de barcas azules
-              y una amplia bahía de viento constante, ideal para el surf y el
-              kitesurf. Es el cierre perfecto para cualquier ruta por Marruecos.
-            </p>
-          </div>
-        </section>
+          {/* SEO / editorial block */}
+          <section className="mt-10 grid grid-cols-1 gap-6 rounded-sm border border-line bg-white p-6 lg:grid-cols-[280px_1fr]">
+            <h2 className="text-xl font-medium uppercase leading-snug lg:text-2xl">
+              Marruecos, donde el desierto se encuentra con la costa
+            </h2>
+            <div className="space-y-3 text-[13px] leading-[1.6] text-muted">
+              <p>
+                <strong className="font-semibold text-ink">Marrakech</strong> es
+                la puerta de entrada al sur de Marruecos. Su{" "}
+                <strong className="font-semibold text-ink">medina</strong>,
+                declarada Patrimonio de la Humanidad por la UNESCO, concentra{" "}
+                <strong className="font-semibold text-ink">zocos</strong>{" "}
+                artesanos, el palacio Bahía y la plaza de Jemaa el-Fna, que cada
+                tarde se llena de músicos y puestos de comida. Dormir en un{" "}
+                <strong className="font-semibold text-ink">riad</strong> con patio
+                interior es la mejor forma de conocer la ciudad desde dentro.
+              </p>
+              <p>
+                El <strong className="font-semibold text-ink">Sáhara</strong>{" "}
+                marroquí se vive en las dunas del Erg Chebbi, junto a Merzouga:
+                travesías en dromedario al atardecer, noches en{" "}
+                <strong className="font-semibold text-ink">jaima</strong> bajo uno
+                de los cielos más limpios de África y amaneceres que tiñen la
+                arena de color cobre. Nuestros campamentos combinan confort y
+                hospitalidad bereber.
+              </p>
+              <p>
+                El <strong className="font-semibold text-ink">Alto Atlas</strong>{" "}
+                es el gran territorio de trekking del norte de África. Desde el
+                valle de Imlil parten rutas entre aldeas bereberes de adobe,
+                nogales y terrazas, con la opción de coronar el Toubkal (4.167 m),
+                siempre acompañados por guías de montaña titulados.
+              </p>
+              <p>
+                Las <strong className="font-semibold text-ink">ciudades
+                imperiales</strong> —Fez, Meknés y Rabat— conservan mil años de
+                historia. La medina de Fez el-Bali es la mayor zona urbana
+                peatonal del mundo, y sus madrasas, curtidores y talleres de
+                cerámica mantienen vivos oficios centenarios.
+              </p>
+              <p>
+                En el Atlántico,{" "}
+                <strong className="font-semibold text-ink">Essaouira</strong>{" "}
+                combina murallas portuguesas, un puerto pesquero de barcas azules
+                y una amplia bahía de viento constante, ideal para el surf y el
+                kitesurf. Es el cierre perfecto para cualquier ruta por Marruecos.
+              </p>
+            </div>
+          </section>
 
-        {/* Destinos destacados */}
-        <section className="mt-10">
-          <h2 className="mb-4 text-2xl font-medium">Destinos destacados</h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {destinos.map((d) => (
-              <a
-                key={d.title}
-                href="#"
-                className="group relative block h-56 overflow-hidden rounded-sm md:h-64"
-              >
-                <Image
-                  src={d.image}
-                  alt={d.alt}
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, 560px"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/15 to-transparent" />
-                <p className="absolute bottom-4 left-4 text-lg font-semibold uppercase tracking-nav text-white md:text-xl">
-                  {d.title}
-                </p>
-              </a>
-            ))}
-          </div>
-        </section>
+          {/* Destinos destacados */}
+          <section className="mt-10">
+            <h2 className="mb-4 text-2xl font-medium">Destinos destacados</h2>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {destinos.map((d) => (
+                <a
+                  key={d.title}
+                  href="#"
+                  className="group relative block h-56 overflow-hidden rounded-sm md:h-64"
+                >
+                  <Image
+                    src={d.image}
+                    alt={d.alt}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    sizes="(max-width: 768px) 100vw, 560px"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/15 to-transparent" />
+                  <p className="absolute bottom-4 left-4 text-lg font-semibold uppercase tracking-nav text-white md:text-xl">
+                    {d.title}
+                  </p>
+                </a>
+              ))}
+            </div>
+          </section>
 
-        {/* Condiciones */}
-        <section className="mt-10 rounded-sm border border-line bg-white p-6">
-          <h2 className="mb-4 text-2xl font-medium">Condiciones</h2>
-          <div className="grid grid-cols-1 gap-x-10 gap-y-4 md:grid-cols-2">
-            {condiciones.map((c) => (
-              <div key={c.title}>
-                <h3 className="text-[13px] font-semibold uppercase tracking-nav text-ink">
-                  {c.title}
-                </h3>
-                <p className="mt-1.5 text-[12.5px] leading-[1.6] text-muted">
-                  {c.body}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
+          {/* Condiciones */}
+          <section className="mt-10 rounded-sm border border-line bg-white p-6">
+            <h2 className="mb-4 text-2xl font-medium">Condiciones</h2>
+            <div className="grid grid-cols-1 gap-x-10 gap-y-4 md:grid-cols-2">
+              {condiciones.map((c) => (
+                <div key={c.title}>
+                  <h3 className="text-[13px] font-semibold uppercase tracking-nav text-ink">
+                    {c.title}
+                  </h3>
+                  <p className="mt-1.5 text-[12.5px] leading-[1.6] text-muted">
+                    {c.body}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
 
-        {/* Breadcrumb */}
-        <nav
-          aria-label="Migas de pan"
-          className="mt-8 text-xs text-muted"
-        >
-          <a href="#" className="hover:text-brand">
-            Inicio
-          </a>
-          <span className="mx-1.5">›</span>
-          <a href="#" className="hover:text-brand">
-            Destinos
-          </a>
-          <span className="mx-1.5">›</span>
-          <span className="text-ink">Marruecos</span>
-        </nav>
+          {/* Breadcrumb */}
+          <nav
+            aria-label="Migas de pan"
+            className="mt-8 text-xs text-muted"
+          >
+            <a href="#" className="hover:text-brand">
+              Inicio
+            </a>
+            <span className="mx-1.5">›</span>
+            <a href="#" className="hover:text-brand">
+              Destinos
+            </a>
+            <span className="mx-1.5">›</span>
+            <span className="text-ink">Marruecos</span>
+          </nav>
+        </div>
+
+        <div data-theme={themes.all.id}>
+          <JsonLd
+            path={allContent.slug}
+            name={allContent.seo.title}
+            description={allContent.seo.description}
+            updatedAt={allContent.seo.updatedAt}
+            breadcrumb={[{ name: "Inicio", path: "/" }]}
+            faq={allContent.faq}
+          />
+
+          <TrustStrip items={allContent.trust} />
+          <FaqAccordion faq={allContent.faq} />
+          <CtaBanner content={allContent.cta} />
+        </div>
       </main>
 
       <Footer />
+      <MobileCtaBar
+        href={allContent.slug}
+        ctaLabel={allContent.stickyCta.label}
+        priceFrom={allContent.stickyCta.priceFrom}
+      />
     </>
   );
 }

@@ -1,250 +1,74 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 
 type NavItem = {
   label: string;
   href: string;
   columns: { title: string; links: string[] }[];
-  featured: {
-    image: string;
-    alt: string;
-    badge: string;
-    title: string;
-    cta: string;
-  };
 };
+
+function filterHref(label: string) {
+  const filter = label
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  return `/?filter=${filter}`;
+}
 
 const ITEMS: NavItem[] = [
   {
-    label: "Ofertas",
-    href: "#ofertas",
-    columns: [
-      {
-        title: "Último minuto",
-        links: ["Escapada a Marrakech", "Fin de semana en Essaouira", "Salidas de esta semana"],
-      },
-      {
-        title: "Larga duración",
-        links: ["Ruta de las mil kasbahs", "Ciudades imperiales en 7 días", "Sáhara y Atlas en 10 días"],
-      },
-      {
-        title: "Familias",
-        links: ["Niños gratis en julio", "Jaimas familiares en Merzouga", "Medinas y desierto en familia"],
-      },
-    ],
-    featured: {
-      image: "/images/tour-sahara-lux.jpg",
-      alt: "Campamento de lujo entre las dunas del Sáhara",
-      badge: "20% de descuento",
-      title: "Sáhara premium: campamento de lujo",
-      cta: "Reservar ahora",
-    },
+    label: "Todas las excursiones",
+    href: filterHref("Todas las excursiones"),
+    columns: [],
   },
   {
-    label: "Destinos",
-    href: "#destinos",
+    label: "Desierto",
+    href: filterHref("Desierto"),
     columns: [
       {
-        title: "Desierto",
-        links: ["Merzouga y el Erg Chebbi", "Erg Chigaga", "Zagora y el valle del Draa"],
-      },
-      {
-        title: "Ciudades imperiales",
-        links: ["Marrakech", "Fez el-Bali", "Meknés", "Rabat", "Chefchaouen"],
-      },
-      {
-        title: "Costa atlántica",
-        links: ["Essaouira", "Agadir", "Taghazout", "Oualidia"],
+        title: "",
+        links: ["Agafay", "Zagora", "Merzouga"],
       },
     ],
-    featured: {
-      image: "/images/tour-merzouga.jpg",
-      alt: "Dunas del Erg Chebbi al atardecer en Merzouga",
-      badge: "10% de descuento",
-      title: "Noche de estrellas en Merzouga",
-      cta: "Reservar ahora",
-    },
   },
   {
-    label: "Cruceros",
-    href: "#cruceros",
+    label: "Salidas desde",
+    href: filterHref("Salidas desde"),
     columns: [
       {
-        title: "Costa atlántica",
-        links: ["Essaouira y su puerto", "Tarifa y el estrecho", "Cabo San Vicente"],
-      },
-      {
-        title: "Mediterráneo",
-        links: ["Tánger y Ceuta", "Costa marroquí", "Algeciras – Tánger"],
-      },
-      {
-        title: "En barco",
-        links: ["Avistamiento de ballenas", "Paseo al atardecer", "Islas Chafarinas"],
+        title: "",
+        links: ["Marrakech", "Saidia"],
       },
     ],
-    featured: {
-      image: "/images/banner-essaouira.jpg",
-      alt: "Vista del puerto y las murallas de Essaouira sobre el Atlántico",
-      badge: "10% de descuento",
-      title: "Paseo en barco por Essaouira",
-      cta: "Reservar ahora",
-    },
   },
   {
-    label: "Caribe",
-    href: "#caribe",
-    columns: [
-      {
-        title: "Islas",
-        links: ["Cuba", "Jamaica", "República Dominicana"],
-      },
-      {
-        title: "Playas",
-        links: ["Cayo Coco", "Punta Cana", "Holguín"],
-      },
-      {
-        title: "Paquetes",
-        links: ["All inclusive", "Escapadas de 7 noches", "Lunas de miel"],
-      },
-    ],
-    featured: {
-      image: "/images/tour-costa.jpg",
-      alt: "Barcas de pesca varadas en la costa",
-      badge: "Vuelo + hotel",
-      title: "Caribe: 7 noches all inclusive",
-      cta: "Reservar ahora",
-    },
+    label: "Excursiones privadas",
+    href: filterHref("Excursiones privadas"),
+    columns: [],
   },
   {
-    label: "Grandes viajes",
-    href: "#grandes-viajes",
-    columns: [
-      {
-        title: "Rutas clásicas",
-        links: ["Ciudades imperiales esenciales", "Ruta del Sáhara", "Marruecos en 15 días"],
-      },
-      {
-        title: "Aventura",
-        links: ["Travesía del Alto Atlas", "4x4 por el Draa", "Travesía en dromedario"],
-      },
-      {
-        title: "Experiencias",
-        links: ["Sesión de astronomía", "Clase de cocina marroquí", "Noche en riad con terraza"],
-      },
-    ],
-    featured: {
-      image: "/images/tour-atlas.jpg",
-      alt: "Senda de trekking entre pueblos bereberes del Alto Atlas",
-      badge: "12% de descuento",
-      title: "Trekking del Alto Atlas",
-      cta: "Reservar ahora",
-    },
+    label: "Traslados aeropuerto",
+    href: filterHref("Traslados aeropuerto"),
+    columns: [],
   },
   {
-    label: "Parques temáticos",
-    href: "#parques-tematicos",
-    columns: [
-      {
-        title: "Cine y desierto",
-        links: ["Atlas Studios de Ouarzazate", "Aït Ben Haddou", "Kasbah de Taourirt"],
-      },
-      {
-        title: "Naturaleza",
-        links: ["Parque Nacional del Toubkal", "Palmeraies de Skoura", "Reserva de Souss-Massa"],
-      },
-      {
-        title: "En familia",
-        links: ["Jardín Majorelle", "Acuario de Agadir", "Oasis de Fint"],
-      },
-    ],
-    featured: {
-      image: "/images/tour-kasbahs.jpg",
-      alt: "Fortaleza de adobe en la ruta de las kasbahs",
-      badge: "5% de descuento",
-      title: "Kasbahs y estudios de cine",
-      cta: "Reservar ahora",
-    },
+    label: "Cena espectáculo",
+    href: filterHref("Cena espectáculo"),
+    columns: [],
   },
   {
     label: "Hoteles",
-    href: "#hoteles",
-    columns: [
-      {
-        title: "Riads",
-        links: ["Riad en Marrakech", "Riad en la medina de Fez", "Casa en Chefchaouen"],
-      },
-      {
-        title: "Desierto",
-        links: ["Campamento de lujo en Merzouga", "Jaima con baño privado", "Bivouac en Erg Chigaga"],
-      },
-      {
-        title: "Lujo",
-        links: ["Hoteles kasbah", "Resorts en Agadir", "Riads de lujo"],
-      },
-    ],
-    featured: {
-      image: "/images/tour-fez.jpg",
-      alt: "Vista de la medina de Fez",
-      badge: "15% de descuento",
-      title: "Riad con patio en la medina de Fez",
-      cta: "Reservar ahora",
-    },
+    href: filterHref("Hoteles"),
+    columns: [],
   },
   {
-    label: "Vuelos",
-    href: "#vuelos",
-    columns: [
-      {
-        title: "Rutas",
-        links: ["Madrid – Marrakech", "Barcelona – Casablanca", "Vuelos a Fez"],
-      },
-      {
-        title: "Aeropuertos",
-        links: ["Marrakech Menara", "Casablanca Mohammed V", "Agadir Al Massira"],
-      },
-      {
-        title: "Consejos",
-        links: ["Equipaje facturado", "Escalas y tránsitos", "Mejores tarifas del año"],
-      },
-    ],
-    featured: {
-      image: "/images/hero.jpg",
-      alt: "Paisaje del sur de Marruecos entre dunas y palmeras",
-      badge: "Desde 89 €",
-      title: "Vuelos a Marrakech desde 89 €",
-      cta: "Reservar ahora",
-    },
-  },
-  {
-    label: "Más productos",
-    href: "#mas-productos",
-    columns: [
-      {
-        title: "Novedades",
-        links: [
-          "Sáhara premium: campamento de lujo",
-          "La ruta de las mil kasbahs",
-          "Fez y la medina eterna",
-        ],
-      },
-      {
-        title: "Duración",
-        links: ["Escapadas de 1 día", "Viajes de 3 a 5 días", "Rutas de 7 días o más"],
-      },
-      {
-        title: "Precio",
-        links: ["Hasta 200 €", "De 200 a 500 €", "Más de 500 €"],
-      },
-    ],
-    featured: {
-      image: "/images/tour-gastronomia.jpg",
-      alt: "Especias y puestos de color en los zocos de Marrakech",
-      badge: "8% de descuento",
-      title: "Sabores de Marrakech",
-      cta: "Reservar ahora",
-    },
+    label: "Hammam y spa",
+    href: filterHref("Hammam y spa"),
+    columns: [],
   },
 ];
 
@@ -255,10 +79,10 @@ const script = {
 };
 
 export default function MainNav() {
-  const [active, setActive] = useState(4); // Grandes viajes underlined by default
+  const [active, setActive] = useState(0);
   const [openMenu, setOpenMenu] = useState<number | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [openSection, setOpenSection] = useState<number | null>(0);
+  const [openSection, setOpenSection] = useState<number | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const cancelClose = () => {
@@ -280,6 +104,17 @@ export default function MainNav() {
       setSheetOpen(false);
     };
     document.addEventListener("keydown", onKey);
+
+    const selectedFilter = new URLSearchParams(window.location.search).get("filter");
+    const selectedIndex = ITEMS.findIndex(
+      (it) =>
+        it.href === `/?filter=${selectedFilter}` ||
+        it.columns.some((column) =>
+          column.links.some((link) => filterHref(link) === `/?filter=${selectedFilter}`),
+        ),
+    );
+    if (selectedIndex >= 0) setActive(selectedIndex);
+
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
@@ -301,7 +136,7 @@ export default function MainNav() {
       onMouseLeave={scheduleClose}
     >
       {/* Mobile trigger */}
-      <div className="flex h-11 items-center justify-between border-b border-line px-3 md:hidden">
+      <div className="flex h-11 items-center justify-between border-b border-line px-3 lg:hidden">
         <span className="text-[13px] font-medium uppercase tracking-nav">
           Menú
         </span>
@@ -324,25 +159,25 @@ export default function MainNav() {
       </div>
 
       {/* Desktop nav: category row spanning the full width, ECI-style */}
-      <div className="hidden border-b border-line md:block">
-        <div className="mx-auto w-full max-w-[1200px] px-3">
-          <ul className="flex h-[60px] items-stretch justify-between">
+      <div className="hidden border-b border-line lg:block">
+        <div className="mx-auto w-full max-w-[1200px] overflow-x-auto px-3">
+          <ul className="flex h-[60px] w-max min-w-full items-stretch justify-between gap-6">
             {ITEMS.map((it, i) => (
               <li key={it.label} className="flex">
                 <a
                   href={it.href}
-                  aria-expanded={openMenu === i}
+                  aria-expanded={it.columns.length ? openMenu === i : undefined}
                   onMouseEnter={() => {
                     cancelClose();
                     setActive(i);
-                    setOpenMenu(i);
+                    setOpenMenu(it.columns.length ? i : null);
                   }}
                   onFocus={() => {
                     setActive(i);
-                    setOpenMenu(i);
+                    setOpenMenu(it.columns.length ? i : null);
                   }}
                   onClick={() => setActive(i)}
-                  className={`flex select-none items-center self-stretch border-b-2 px-0.5 text-center text-[13px] uppercase tracking-nav transition-colors ${
+                  className={`flex select-none items-center self-stretch whitespace-nowrap border-b-2 px-0.5 text-center text-[13px] uppercase tracking-nav transition-colors ${
                     active === i
                       ? "border-ink font-semibold text-ink"
                       : "border-transparent font-medium text-ink hover:border-line-soft"
@@ -357,25 +192,26 @@ export default function MainNav() {
       </div>
 
       {/* Mega menu */}
-      {item && (
+      {item && item.columns.length > 0 && (
         <div
           onMouseEnter={cancelClose}
           onMouseLeave={scheduleClose}
-          className="absolute inset-x-0 top-full hidden border-b border-line bg-white shadow-[0_24px_40px_-32px_rgba(0,0,0,0.45)] md:block"
+          className="absolute inset-x-0 top-full hidden border-b border-line bg-white shadow-[0_24px_40px_-32px_rgba(0,0,0,0.45)] lg:block"
         >
           <div className="mx-auto w-full max-w-[1200px] px-3">
-            <div className="grid gap-7 py-7 md:grid-cols-2 lg:grid-cols-[1fr_300px]">
-              <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-7 py-6 sm:grid-cols-2 lg:grid-cols-3">
                 {item.columns.map((col) => (
                   <div key={col.title}>
-                    <h3 className="text-[12px] font-semibold uppercase tracking-nav text-muted">
-                      {col.title}
-                    </h3>
+                    {col.title ? (
+                      <h3 className="text-[12px] font-semibold uppercase tracking-nav text-muted">
+                        {col.title}
+                      </h3>
+                    ) : null}
                     <ul className="mt-3 space-y-2">
                       {col.links.map((link) => (
                         <li key={link}>
                           <a
-                            href="#"
+                            href={filterHref(link)}
                             className="text-[14px] leading-snug text-ink transition-colors hover:text-brand"
                           >
                             {link}
@@ -385,33 +221,6 @@ export default function MainNav() {
                     </ul>
                   </div>
                 ))}
-              </div>
-
-              <aside className="flex flex-col overflow-hidden border border-line bg-surface md:flex-row lg:flex-col">
-                <div className="relative h-32 w-full shrink-0 md:h-auto md:w-36 lg:h-32 lg:w-full">
-                  <Image
-                    src={item.featured.image}
-                    alt={item.featured.alt}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 144px, 300px"
-                  />
-                  <span className="badge absolute left-3 top-3">
-                    {item.featured.badge}
-                  </span>
-                </div>
-                <div className="flex flex-1 flex-col p-4">
-                  <p className="text-[12px] uppercase tracking-nav text-muted">
-                    Destacado
-                  </p>
-                  <h3 className="mt-1 text-[15px] font-semibold leading-snug">
-                    {item.featured.title}
-                  </h3>
-                  <a href="#" className="btn btn-primary mt-auto w-full">
-                    {item.featured.cta}
-                  </a>
-                </div>
-              </aside>
             </div>
           </div>
         </div>
@@ -423,7 +232,7 @@ export default function MainNav() {
           role="dialog"
           aria-modal="true"
           aria-label="Menú de navegación"
-          className="fixed inset-0 z-50 md:hidden"
+          className="fixed inset-0 z-50 lg:hidden"
         >
           <button
             type="button"
@@ -459,70 +268,94 @@ export default function MainNav() {
             <div className="flex-1 overflow-y-auto overscroll-contain px-4">
               {ITEMS.map((it, i) => (
                 <div key={it.label} className="border-b border-line">
-                  <button
-                    type="button"
-                    aria-expanded={openSection === i}
-                    onClick={() => {
-                      setActive(i);
-                      setOpenSection(openSection === i ? null : i);
-                    }}
-                    className={`flex w-full items-center justify-between gap-3 py-3.5 text-left text-[14px] font-medium uppercase tracking-nav transition-colors ${
-                      active === i ? "text-brand" : "text-ink"
-                    }`}
-                  >
-                    {it.label}
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      aria-hidden="true"
-                      className={`shrink-0 transition-transform ${
-                        openSection === i
-                          ? "rotate-180 text-brand"
-                          : "text-muted"
+                  {it.columns.length === 0 ? (
+                    <a
+                      href={it.href}
+                      onClick={() => {
+                        setActive(i);
+                        setSheetOpen(false);
+                      }}
+                      className={`block py-3.5 text-[14px] font-medium uppercase tracking-nav transition-colors ${
+                        active === i ? "text-brand" : "text-ink"
                       }`}
                     >
-                      <path
-                        d={CHEVRON}
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
+                      {it.label}
+                    </a>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between gap-3">
+                        <a
+                          href={it.href}
+                          onClick={() => {
+                            setActive(i);
+                            setSheetOpen(false);
+                          }}
+                          className={`flex-1 py-3.5 text-[14px] font-medium uppercase tracking-nav transition-colors ${
+                            active === i ? "text-brand" : "text-ink"
+                          }`}
+                        >
+                          {it.label}
+                        </a>
+                        <button
+                          type="button"
+                          aria-label={`Mostrar opciones de ${it.label}`}
+                          aria-expanded={openSection === i}
+                          onClick={() => {
+                            setActive(i);
+                            setOpenSection(openSection === i ? null : i);
+                          }}
+                          className="p-2 text-muted"
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            aria-hidden="true"
+                            className={`shrink-0 transition-transform ${
+                              openSection === i
+                                ? "rotate-180 text-brand"
+                                : "text-muted"
+                            }`}
+                          >
+                            <path
+                              d={CHEVRON}
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+                      </div>
 
-                  {openSection === i && (
-                    <div className="pb-4">
-                      {it.columns.map((col) => (
-                        <div key={col.title} className="mb-3">
-                          <p className="text-[12px] font-semibold uppercase tracking-nav text-muted">
-                            {col.title}
-                          </p>
-                          <ul className="mt-1.5 space-y-1">
-                            {col.links.map((link) => (
-                              <li key={link}>
-                                <a
-                                  href="#"
-                                  onClick={() => setSheetOpen(false)}
-                                  className="block py-0.5 text-[14px] text-ink transition-colors hover:text-brand"
-                                >
-                                  {link}
-                                </a>
-                              </li>
-                            ))}
-                          </ul>
+                      {openSection === i && (
+                        <div className="pb-4">
+                          {it.columns.map((col) => (
+                            <div key={col.title} className="mb-3">
+                              {col.title ? (
+                                <p className="text-[12px] font-semibold uppercase tracking-nav text-muted">
+                                  {col.title}
+                                </p>
+                              ) : null}
+                              <ul className="mt-1.5 space-y-1">
+                                {col.links.map((link) => (
+                                  <li key={link}>
+                                    <a
+                                      href={filterHref(link)}
+                                      onClick={() => setSheetOpen(false)}
+                                      className="block py-0.5 text-[14px] text-ink transition-colors hover:text-brand"
+                                    >
+                                      {link}
+                                    </a>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                      <a
-                        href="#"
-                        onClick={() => setSheetOpen(false)}
-                        className="btn btn-primary mt-1 w-full"
-                      >
-                        {it.featured.cta}
-                      </a>
-                    </div>
+                      )}
+                    </>
                   )}
                 </div>
               ))}

@@ -7,7 +7,7 @@ export default function Header() {
     <header className="bg-white">
       {/* Brand + utility row */}
       <div className="mx-auto flex h-16 w-full max-w-[1200px] items-center justify-between px-3">
-        <a href="#" className="flex items-baseline gap-2">
+        <a href="/" className="flex items-baseline gap-2">
           <span className="text-[22px] font-medium leading-none tracking-tight">
             Nomadica
           </span>
@@ -40,7 +40,7 @@ export default function Header() {
           </a>
 
           <a
-            href="#"
+            href="/sobre-nosotros"
             className="hidden items-center gap-2 transition-colors hover:text-brand lg:flex"
           >
             <svg
