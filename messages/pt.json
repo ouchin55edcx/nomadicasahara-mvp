@@ -1,0 +1,108 @@
+{
+  "common": {
+    "brand": "Nomadica Sahara",
+    "phone": "91 33 00 732",
+    "phoneHref": "tel:913300732",
+    "reserveNow": "Reservar agora",
+    "signIn": "Iniciar sessão",
+    "helpCenter": "Centro de ajuda",
+    "agencies": "Agências e marcação",
+    "menu": "Menu",
+    "openMenu": "Abrir menu",
+    "closeMenu": "Fechar menu",
+    "mainNavigation": "Navegação principal",
+    "navigationMenu": "Menu de navegação",
+    "showOptionsFor": "Mostrar opções de {item}",
+    "language": "Idioma",
+    "selectLanguage": "Selecionar idioma",
+    "skipToContent": "Ir para o conteúdo",
+    "notFound": {
+      "title": "Página não encontrada",
+      "description": "A página que procura não existe ou mudou de endereço.",
+      "backHome": "Voltar ao início"
+    },
+    "error": {
+      "title": "Algo correu mal",
+      "description": "Ocorreu um erro inesperado. Tente novamente dentro de alguns minutos.",
+      "retry": "Tentar novamente"
+    }
+  },
+  "nav": {
+    "items": {
+      "allTours": "Todas as excursões",
+      "desert": "Deserto",
+      "departures": "Partidas de",
+      "privateTours": "Excursões privadas",
+      "airportTransfers": "Transferências do aeroporto",
+      "dinnerShow": "Jantar e espetáculo",
+      "hotels": "Hotéis",
+      "hammamSpa": "Hammam e spa"
+    },
+    "places": {
+      "agafay": "Agafay",
+      "zagora": "Zagora",
+      "merzouga": "Merzouga",
+      "marrakech": "Marrakech",
+      "saidia": "Saidia"
+    }
+  },
+  "footer": {
+    "tagline": "Viagens de autor pelo Marrocos desde 2012. Deserto, medinas e Atlântico com guias locais oficiais.",
+    "companyHeading": "Empresa",
+    "company": {
+      "about": "Quem somos",
+      "becomePartner": "Torne-se parceiro",
+      "workWithUs": "Trabalhe connosco"
+    },
+    "linksHeading": "Ligações úteis",
+    "links": {
+      "travelGuides": "Guias de viagem",
+      "terms": "Condições gerais",
+      "privacy": "Política de privacidade",
+      "cookies": "Política de cookies"
+    },
+    "languageHeading": "Idioma",
+    "supportHours": "Atendimento ao viajante de seg. a sex., 9:00–19:00 (CET).",
+    "copyright": "© 2026 Nomadica Sahara S.L. — Todos os direitos reservados.",
+    "license": "Licença de agência de viagens CICMA 4127."
+  },
+  "languages": {
+    "es": "Español",
+    "en": "English",
+    "pt": "Português"
+  },
+  "metadata": {
+    "siteName": "Nomadica Sahara",
+    "titleTemplate": "%s | Nomadica Sahara",
+    "defaultTitle": "Viagens pelo Marrocos | Nomadica Sahara",
+    "defaultDescription": "Excursões, hotéis e pacotes no Marrocos. Deserto, medinas e Atlântico com guias locais oficiais.",
+    "landing": {
+      "title": "Viagens pelo Marrocos | Nomadica Sahara",
+      "description": "Excursões, hotéis e pacotes no Marrocos. Deserto, medinas e Atlântico com guias locais oficiais."
+    },
+    "about": {
+      "title": "Quem somos",
+      "description": "Agência de viagens especializada em itinerários no Marrocos desde 2012. Conheça a equipa da Nomadica Sahara."
+    },
+    "checkout": {
+      "title": "Concluir reserva",
+      "description": "Preencha os dados dos viajantes e confirme a sua reserva."
+    },
+    "catalogNotFound": {
+      "title": "Catálogo não encontrado | Nomadica Sahara"
+    },
+    "tour": {
+      "description": "Viagem de 7 dias a Marraquexe e Essaouira: medina, kasbahs e estadia à beira-mar com voos, hotéis e transferências incluídos."
+    },
+    "tourSummary": {
+      "description": "Resumo da viagem: alojamento, transporte, serviços incluídos e condições da sua reserva."
+    },
+    "partnerLogin": {
+      "title": "Acesso parceiros",
+      "description": "Entre no portal de parceiros da Nomadica Sahara."
+    },
+    "partnerPortal": {
+      "titleTemplate": "%s | Portal de parceiros"
+    }
+  }
+}

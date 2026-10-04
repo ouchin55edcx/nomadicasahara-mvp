@@ -2,3 +2,6 @@
 /.next
 /.env.local
 /.freebuff
+
+# TypeScript incremental cache
+tsconfig.tsbuildinfo

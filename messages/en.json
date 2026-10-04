@@ -1,0 +1,108 @@
+{
+  "common": {
+    "brand": "Nomadica Sahara",
+    "phone": "91 33 00 732",
+    "phoneHref": "tel:913300732",
+    "reserveNow": "Book now",
+    "signIn": "Sign in",
+    "helpCenter": "Help centre",
+    "agencies": "Agencies & appointments",
+    "menu": "Menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "mainNavigation": "Main navigation",
+    "navigationMenu": "Navigation menu",
+    "showOptionsFor": "Show options for {item}",
+    "language": "Language",
+    "selectLanguage": "Select language",
+    "skipToContent": "Skip to content",
+    "notFound": {
+      "title": "Page not found",
+      "description": "The page you are looking for does not exist or has moved.",
+      "backHome": "Back to home"
+    },
+    "error": {
+      "title": "Something went wrong",
+      "description": "An unexpected error occurred. Please try again in a few minutes.",
+      "retry": "Try again"
+    }
+  },
+  "nav": {
+    "items": {
+      "allTours": "All excursions",
+      "desert": "Desert",
+      "departures": "Departures from",
+      "privateTours": "Private tours",
+      "airportTransfers": "Airport transfers",
+      "dinnerShow": "Dinner & show",
+      "hotels": "Hotels",
+      "hammamSpa": "Hammam & spa"
+    },
+    "places": {
+      "agafay": "Agafay",
+      "zagora": "Zagora",
+      "merzouga": "Merzouga",
+      "marrakech": "Marrakech",
+      "saidia": "Saidia"
+    }
+  },
+  "footer": {
+    "tagline": "Curated journeys across Morocco since 2012. Desert, medinas and the Atlantic with certified local guides.",
+    "companyHeading": "Company",
+    "company": {
+      "about": "About us",
+      "becomePartner": "Become a partner",
+      "workWithUs": "Work with us"
+    },
+    "linksHeading": "Useful links",
+    "links": {
+      "travelGuides": "Travel guides",
+      "terms": "Terms and conditions",
+      "privacy": "Privacy policy",
+      "cookies": "Cookie policy"
+    },
+    "languageHeading": "Language",
+    "supportHours": "Traveller support Mon–Fri, 9:00–19:00 (CET).",
+    "copyright": "© 2026 Nomadica Sahara S.L. — All rights reserved.",
+    "license": "Travel agency licence CICMA 4127."
+  },
+  "languages": {
+    "es": "Español",
+    "en": "English",
+    "pt": "Português"
+  },
+  "metadata": {
+    "siteName": "Nomadica Sahara",
+    "titleTemplate": "%s | Nomadica Sahara",
+    "defaultTitle": "Trips in Morocco | Nomadica Sahara",
+    "defaultDescription": "Excursions, hotels and packages in Morocco. Desert, medinas and the Atlantic with certified local guides.",
+    "landing": {
+      "title": "Trips in Morocco | Nomadica Sahara",
+      "description": "Excursions, hotels and packages in Morocco. Desert, medinas and the Atlantic with certified local guides."
+    },
+    "about": {
+      "title": "About us",
+      "description": "A travel agency specialised in Morocco itineraries since 2012. Meet the Nomadica Sahara team."
+    },
+    "checkout": {
+      "title": "Complete your booking",
+      "description": "Fill in the traveller details and confirm your booking."
+    },
+    "catalogNotFound": {
+      "title": "Catalogue not found | Nomadica Sahara"
+    },
+    "tour": {
+      "description": "A 7-day trip to Marrakech and Essaouira: medina, kasbahs and a seaside stay with flights, hotels and transfers included."
+    },
+    "tourSummary": {
+      "description": "Trip overview: accommodation, transport, included services and your booking conditions."
+    },
+    "partnerLogin": {
+      "title": "Partner sign in",
+      "description": "Sign in to the Nomadica Sahara partner portal."
+    },
+    "partnerPortal": {
+      "titleTemplate": "%s | Partner portal"
+    }
+  }
+}
