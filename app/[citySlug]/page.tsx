@@ -7,16 +7,17 @@ import CatalogPage from "@/components/catalog/CatalogPage";
 import { catalogConfigs } from "@/content/catalog";
 
 type PageProps = {
-  params: { citySlug: string };
-  searchParams?: Record<string, string | string[] | undefined>;
+  params: Promise<{ citySlug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export function generateStaticParams() {
   return Object.keys(catalogConfigs).map((citySlug) => ({ citySlug }));
 }
 
-export function generateMetadata({ params }: PageProps): Metadata {
-  const config = catalogConfigs[params.citySlug];
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { citySlug } = await params;
+  const config = catalogConfigs[citySlug];
   if (!config) return { title: "Catálogo no encontrado | Nomadica Sahara" };
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://nomadicasahara.com";
   return {
@@ -35,8 +36,10 @@ export function generateMetadata({ params }: PageProps): Metadata {
   };
 }
 
-export default function CatalogRoute({ params, searchParams = {} }: PageProps) {
-  const config = catalogConfigs[params.citySlug];
+export default async function CatalogRoute({ params, searchParams }: PageProps) {
+  const { citySlug } = await params;
+  const query = await searchParams;
+  const config = catalogConfigs[citySlug];
   if (!config) notFound();
-  return <><Header /><MainNav /><CatalogPage config={config} query={searchParams} /><Footer /></>;
+  return <><Header /><MainNav /><CatalogPage config={config} query={query} /><Footer /></>;
 }

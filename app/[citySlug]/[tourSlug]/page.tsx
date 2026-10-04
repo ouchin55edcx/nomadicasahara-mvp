@@ -25,13 +25,14 @@ function titleFromSlug(slug: string) {
     .join(" ");
 }
 
-export function generateMetadata({
+export async function generateMetadata({
   params,
 }: {
-  params: { citySlug: string; tourSlug: string };
+  params: Promise<{ citySlug: string; tourSlug: string }>;
 }) {
-  const city = titleFromSlug(params.citySlug.replace(/-tours$/, ""));
-  const tour = titleFromSlug(params.tourSlug);
+  const { citySlug, tourSlug } = await params;
+  const city = titleFromSlug(citySlug.replace(/-tours$/, ""));
+  const tour = titleFromSlug(tourSlug);
   return {
     title: `${tour} — ${city} | Nomadica Sahara`,
     description:
@@ -482,12 +483,13 @@ function PlanPanel({
   );
 }
 
-export default function TourPage({
+export default async function TourPage({
   params,
 }: {
-  params: { citySlug: string; tourSlug: string };
+  params: Promise<{ citySlug: string; tourSlug: string }>;
 }) {
-  const resumenHref = `/${params.citySlug}/${params.tourSlug}/resumen`;
+  const { citySlug, tourSlug } = await params;
+  const resumenHref = `/${citySlug}/${tourSlug}/resumen`;
   return (
     <>
       <Header />

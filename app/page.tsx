@@ -31,6 +31,9 @@ const IMG = {
   washington: "/images/tour-ciudades.jpg",
   suiza: "/images/tour-atlas.jpg",
   crucero: "/images/banner-essaouira.jpg",
+  costasol: "/images/tour-costa.jpg",
+  costaluz: "/images/tour-costa.jpg",
+  lisboa: "/images/tour-ciudades.jpg",
 };
 
 const heroSlides = [

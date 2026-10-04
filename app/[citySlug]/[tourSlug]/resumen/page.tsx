@@ -25,13 +25,14 @@ function titleFromSlug(slug: string) {
     .join(" ");
 }
 
-export function generateMetadata({
+export async function generateMetadata({
   params,
 }: {
-  params: { citySlug: string; tourSlug: string };
+  params: Promise<{ citySlug: string; tourSlug: string }>;
 }) {
-  const city = titleFromSlug(params.citySlug.replace(/-tours$/, ""));
-  const tour = titleFromSlug(params.tourSlug);
+  const { citySlug, tourSlug } = await params;
+  const city = titleFromSlug(citySlug.replace(/-tours$/, ""));
+  const tour = titleFromSlug(tourSlug);
   return {
     title: `Resumen — ${tour} | ${city} | Nomadica Sahara`,
     description:
