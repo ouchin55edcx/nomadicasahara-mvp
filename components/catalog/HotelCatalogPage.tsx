@@ -16,7 +16,7 @@ function queryValue(query: Query, key: string) {
 
 function HotelLine({ product }: { product: Product }) {
   return (
-    <Link href={product.href ?? `/booking/checkout?producto=${encodeURIComponent(product.slug)}`} className="group flex min-h-[76px] items-center justify-between gap-3 border-b border-line py-2.5 last:border-0">
+    <Link href={`/hoteles/${product.id}`} className="group flex min-h-[76px] items-center justify-between gap-3 border-b border-line py-2.5 last:border-0">
       <div className="min-w-0">
         <p className="line-clamp-1 text-[13px] font-semibold leading-snug group-hover:text-[#478F00]">{product.title}<span className="ml-1 text-[#D79A1B]">{"★".repeat(product.stars ?? 0)}</span></p>
         <p className="mt-1 flex items-center gap-1 text-[11px] text-muted"><MapPin className="h-3 w-3" />{product.location}</p>

@@ -48,9 +48,9 @@ function ProductFrame({ product, children }: { product: Product; children: React
   );
 }
 
-function Action({ product, children }: { product: Product; children: string }) {
+function Action({ product, children, href }: { product: Product; children: string; href?: string }) {
   return (
-    <Link href={product.href ?? `/booking/checkout?producto=${encodeURIComponent(product.slug)}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-sm border border-[#60B61A] bg-white px-4 text-sm font-semibold text-[#438D25] transition-colors hover:bg-[#60B61A] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#478F00]">
+    <Link href={href ?? product.href ?? `/booking/checkout?producto=${encodeURIComponent(product.slug)}`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-sm border border-[#60B61A] bg-white px-4 text-sm font-semibold text-[#438D25] transition-colors hover:bg-[#60B61A] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#478F00]">
       {children}<ArrowRight className="h-4 w-4" aria-hidden="true" />
     </Link>
   );
@@ -95,16 +95,18 @@ function HotelCard({ product }: { product: Product }) {
       </div>
       <div className="flex items-end justify-between gap-4 border-t border-line pt-4 md:flex-col md:items-stretch md:justify-center md:border-t-0 md:pt-0">
         <Price product={product} suffix="por noche" />
-        <Action product={product}>Ver hotel</Action>
+        <Action product={product} href={`/hoteles/${product.id}`}>Ver detalles</Action>
       </div>
     </ProductFrame>
   );
 }
 
 export function HotelCompactCard({ product }: { product: Product }) {
+  const hotelHref = `/hoteles/${product.id}`;
+
   return (
     <article className="group flex h-full flex-col overflow-hidden border border-line bg-white transition-shadow hover:shadow-[0_12px_28px_-20px_rgba(0,0,0,0.42)]">
-      <Link href={product.href ?? `/booking/checkout?producto=${encodeURIComponent(product.slug)}`} className="relative block aspect-[4/3] overflow-hidden bg-[#ECEEE9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#58B900]">
+      <Link href={hotelHref} className="relative block aspect-[4/3] overflow-hidden bg-[#ECEEE9] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#58B900]">
         <Image src={product.image} alt={product.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 280px" className="object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
         {product.discount ? <span className="absolute left-2 top-2 bg-[#58B900] px-2 py-1 text-[11px] font-semibold text-white">-{product.discount}%</span> : null}
         {product.featured || product.tags?.includes("featured") ? <span className="absolute bottom-2 left-2 bg-white/95 px-2 py-1 text-[10px] font-semibold uppercase text-[#222]">Selección local</span> : null}
@@ -114,14 +116,14 @@ export function HotelCompactCard({ product }: { product: Product }) {
           <span className="text-[11px] text-muted">{product.category} · {product.stars} estrellas</span>
           <span className="inline-flex items-center gap-1 text-xs font-semibold"><Star className="h-3 w-3 fill-[#E0A72E] text-[#E0A72E]" />{product.rating?.toFixed(1)}</span>
         </div>
-        <Link href={product.href ?? `/booking/checkout?producto=${encodeURIComponent(product.slug)}`} className="mt-1 line-clamp-2 text-[15px] font-semibold leading-snug text-[#262626] hover:text-[#478F00]">{product.title}</Link>
+        <Link href={hotelHref} className="mt-1 line-clamp-2 text-[15px] font-semibold leading-snug text-[#262626] hover:text-[#478F00]">{product.title}</Link>
         <p className="mt-1 text-xs text-muted">{product.location}</p>
         <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-[11px] text-[#555]">
           {product.hotelFacilities?.slice(0, 3).map((facility) => <span key={facility}>{facility}</span>)}
         </div>
         <div className="mt-auto flex items-end justify-between gap-2 border-t border-line pt-3">
           <p className="text-[11px] leading-tight text-muted">Desde <span className="block text-xl font-semibold text-[#478F00]">{product.price} €</span><span>por noche</span></p>
-          <Link href={product.href ?? `/booking/checkout?producto=${encodeURIComponent(product.slug)}`} className="inline-flex min-h-9 items-center gap-1 border border-[#58B900] px-2.5 text-[11px] font-semibold uppercase text-[#427D0D] transition-colors hover:bg-[#58B900] hover:text-white">Reservar <ArrowRight className="h-3 w-3" /></Link>
+          <Link href={hotelHref} className="inline-flex min-h-9 items-center gap-1 border border-[#58B900] px-2.5 text-[11px] font-semibold uppercase text-[#427D0D] transition-colors hover:bg-[#58B900] hover:text-white">Ver detalles <ArrowRight className="h-3 w-3" /></Link>
         </div>
       </div>
     </article>

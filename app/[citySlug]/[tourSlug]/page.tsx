@@ -36,23 +36,8 @@ export async function generateMetadata({
   return {
     title: `${tour} — ${city} | Nomadica Sahara`,
     description:
-      "Viaje de 7 días a Marrakech y Essaouira: medina, kasbahs y estancia en playa con vuelos, hoteles y traslados incluidos.",
+      "Experiencias locales y alojamiento en Marrakech, con atención de anfitriones de la ciudad.",
   };
-}
-
-function PlaneIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-      className={className}
-    >
-      <path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
-    </svg>
-  );
 }
 
 function VanIcon({ className = "" }: { className?: string }) {
@@ -132,11 +117,14 @@ function EuroIcon() {
 }
 
 type Hotel = {
-  name: string;
+  title: string;
   stars: number;
-  stay: string;
-  room: string;
-  rating: string;
+  location: string;
+  nights: number;
+  roomType: string;
+  mealPlan: string;
+  ratingScore: number;
+  ratingText: string;
   image: string;
   alt: string;
 };
@@ -147,116 +135,139 @@ type Transfer = {
   to: string;
   toType: string;
   date: string;
-  shared?: string;
+  shared: string;
   priv: string;
 };
 
-const FLIGHTS = [
-  {
-    route: "Madrid - Marrakech",
-    date: "16/11/2026",
-    from: "Madrid (MAD)",
-    fromTime: "22:40",
-    to: "Marrakech (RAK)",
-    toTime: "23:45",
-    duration: "2h 5m",
-  },
-  {
-    route: "Marrakech - Madrid",
-    date: "22/11/2026",
-    from: "Marrakech (RAK)",
-    fromTime: "9:20",
-    to: "Madrid (MAD)",
-    toTime: "12:20",
-    duration: "2h 0m",
-  },
-];
-
 const PLANS = [
   {
-    key: "eco",
-    title: "Selección Económica",
-    oldPrice: "502 €",
-    price: "452 €",
-    perPerson: "226  € por persona",
+    key: "riad-full-moon",
+    title: "Riad en la Medina",
+    oldPrice: "540 €",
+    price: "450 €",
+    perPerson: "225 € por persona",
     recommended: false,
     hotels: [
       {
-        name: "Riad Full Moon",
+        title: "Riad Full Moon",
         stars: 2,
-        stay: "Marrakech - 2 noches",
-        room: "Habitacion Estándar | Alojamiento y desayuno",
-        rating: "8,0 Muy bueno",
+        location: "Marrakech Medina",
+        nights: 6,
+        roomType: "Habitación Estándar",
+        mealPlan: "Alojamiento y desayuno",
+        ratingScore: 8.0,
+        ratingText: "Muy bueno",
         image: "/images/tour-fez.jpg",
-        alt: "Patio interior de un riad en la medina de Fez",
-      },
-      {
-        name: "Riad Al Khansaa",
-        stars: 3,
-        stay: "Essaouira - 3 noches",
-        room: "Habitación Superior | Alojamiento y desayuno",
-        rating: "8,0 Muy bueno",
-        image: "/images/banner-essaouira.jpg",
-        alt: "Vista del puerto y las murallas de Essaouira",
-      },
-      {
-        name: "Riad Full Moon",
-        stars: 2,
-        stay: "Marrakech - 1 noche",
-        room: "Habitacion Estándar | Alojamiento y desayuno",
-        rating: "8,0 Muy bueno",
-        image: "/images/tour-fez.jpg",
-        alt: "Patio interior de un riad en la medina de Fez",
+        alt: "Patio interior de un riad en Marrakech",
       },
     ],
     transfers: [
-      { from: "Marrakech", fromType: "Aeropuerto", to: "Riad Full Moon", toType: "Hotel", date: "16/11/2026", shared: "Compartido + 20 €", priv: "Privado + 30 €" },
-      { from: "Riad Full Moon", fromType: "Hotel", to: "Riad Al Khansaa", toType: "Hotel", date: "18/11/2026", priv: "Privado + 112 €" },
-      { from: "Riad Al Khansaa", fromType: "Hotel", to: "Riad Full Moon", toType: "Hotel", date: "21/11/2026", priv: "Privado + 112 €" },
-      { from: "Riad Full Moon", fromType: "Hotel", to: "Marrakech", toType: "Aeropuerto", date: "22/11/2026", shared: "Compartido + 20 €", priv: "Privado + 30 €" },
+      { from: "Marrakech Medina", fromType: "Zona de Marrakech", to: "Gueliz", toType: "Zona de Marrakech", date: "16/11/2026", shared: "Compartido + 20 €", priv: "Privado + 30 €" },
+      { from: "Gueliz", fromType: "Zona de Marrakech", to: "Palmeraie", toType: "Zona de Marrakech", date: "19/11/2026", shared: "Compartido + 20 €", priv: "Privado + 30 €" },
     ] as Transfer[],
   },
   {
-    key: "rec",
-    title: "Selección Recomendada",
-    oldPrice: "1020 €",
-    price: "918 €",
-    perPerson: "459  € por persona",
+    key: "riad-dar-anika",
+    title: "Riad con Encanto",
+    oldPrice: "720 €",
+    price: "630 €",
+    perPerson: "315 € por persona",
     recommended: true,
     hotels: [
       {
-        name: "Kenzi Club Agdal Medina- All Inclusive",
-        stars: 5,
-        stay: "Marrakech - 2 noches",
-        room: "Habitación De Lujo Con Vista Al Jardín | Todo incluido",
-        rating: "9,0 Excelente",
+        title: "Riad Dar Anika",
+        stars: 4,
+        location: "Marrakech Medina",
+        nights: 6,
+        roomType: "Habitación Doble Superior",
+        mealPlan: "Alojamiento y desayuno",
+        ratingScore: 8.9,
+        ratingText: "Excelente",
         image: "/images/tour-ciudades.jpg",
-        alt: "Vista de Marrakech y su palmeral",
-      },
-      {
-        name: "Riad Al Madina",
-        stars: 3,
-        stay: "Essaouira - 3 noches",
-        room: "Habitación Estándar | Alojamiento y desayuno",
-        rating: "8,0 Muy bueno",
-        image: "/images/tour-costa.jpg",
-        alt: "Barcas de pesca en la costa de Essaouira",
-      },
-      {
-        name: "Kenzi Club Agdal Medina- All Inclusive",
-        stars: 5,
-        stay: "Marrakech - 1 noche",
-        room: "Habitación De Lujo Con Vista Al Jardín | Todo incluido",
-        rating: "8,0 Muy bueno",
-        image: "/images/tour-ciudades.jpg",
-        alt: "Vista de Marrakech y su palmeral",
+        alt: "Riad con patio tradicional en Marrakech",
       },
     ],
     transfers: [
-      { from: "Marrakech", fromType: "Aeropuerto", to: "Kenzi Club Agdal Medina- All Inclusive", toType: "Hotel", date: "16/11/2026", shared: "Compartido + 20 €", priv: "Privado + 28 €" },
-      { from: "Kenzi Club Agdal Medina- All Inclusive", fromType: "Hotel", to: "Riad Al Madina", toType: "Hotel", date: "18/11/2026", priv: "Privado + 112 €" },
-      { from: "Riad Al Madina", fromType: "Hotel", to: "Kenzi Club Agdal Medina- All Inclusive", toType: "Hotel", date: "21/11/2026", priv: "Privado + 112 €" },
-      { from: "Kenzi Club Agdal Medina- All Inclusive", fromType: "Hotel", to: "Marrakech", toType: "Aeropuerto", date: "22/11/2026", shared: "Compartido + 20 €", priv: "Privado + 28 €" },
+      { from: "Marrakech Medina", fromType: "Zona de Marrakech", to: "Hivernage", toType: "Zona de Marrakech", date: "17/11/2026", shared: "Compartido + 20 €", priv: "Privado + 32 €" },
+      { from: "Hivernage", fromType: "Zona de Marrakech", to: "Marrakech Medina", toType: "Zona de Marrakech", date: "20/11/2026", shared: "Compartido + 20 €", priv: "Privado + 32 €" },
+    ] as Transfer[],
+  },
+  {
+    key: "melia-marrakech",
+    title: "Hotel Urbano",
+    oldPrice: "980 €",
+    price: "840 €",
+    perPerson: "420 € por persona",
+    recommended: false,
+    hotels: [
+      {
+        title: "Meliá Marrakech",
+        stars: 4,
+        location: "Hivernage, Marrakech",
+        nights: 6,
+        roomType: "Habitación Deluxe",
+        mealPlan: "Alojamiento y desayuno",
+        ratingScore: 8.7,
+        ratingText: "Fabuloso",
+        image: "/images/tour-sahara-lux.jpg",
+        alt: "Hotel urbano con piscina en Marrakech",
+      },
+    ],
+    transfers: [
+      { from: "Hivernage", fromType: "Zona de Marrakech", to: "Marrakech Medina", toType: "Zona de Marrakech", date: "16/11/2026", shared: "Compartido + 20 €", priv: "Privado + 35 €" },
+      { from: "Marrakech Medina", fromType: "Zona de Marrakech", to: "Gueliz", toType: "Zona de Marrakech", date: "21/11/2026", shared: "Compartido + 20 €", priv: "Privado + 35 €" },
+    ] as Transfer[],
+  },
+  {
+    key: "atlas-palace",
+    title: "Hotel Boutique",
+    oldPrice: "1080 €",
+    price: "960 €",
+    perPerson: "480 € por persona",
+    recommended: true,
+    hotels: [
+      {
+        title: "Atlas Palace & Spa",
+        stars: 5,
+        location: "Gueliz, Marrakech",
+        nights: 6,
+        roomType: "Habitación Deluxe con Terraza",
+        mealPlan: "Media pensión",
+        ratingScore: 9.2,
+        ratingText: "Fantástico",
+        image: "/images/tour-ciudades.jpg",
+        alt: "Hotel boutique con jardín en Marrakech",
+      },
+    ],
+    transfers: [
+      { from: "Gueliz", fromType: "Zona de Marrakech", to: "Agdal", toType: "Zona de Marrakech", date: "18/11/2026", shared: "Compartido + 20 €", priv: "Privado + 35 €" },
+      { from: "Agdal", fromType: "Zona de Marrakech", to: "Gueliz", toType: "Zona de Marrakech", date: "21/11/2026", shared: "Compartido + 20 €", priv: "Privado + 35 €" },
+    ] as Transfer[],
+  },
+  {
+    key: "palmeraie-oasis",
+    title: "Resort en Palmeraie",
+    oldPrice: "900 €",
+    price: "780 €",
+    perPerson: "390 € por persona",
+    recommended: false,
+    hotels: [
+      {
+        title: "Palmeraie Oasis Resort",
+        stars: 5,
+        location: "Palmeraie, Marrakech",
+        nights: 6,
+        roomType: "Suite Jardín",
+        mealPlan: "Alojamiento y desayuno",
+        ratingScore: 9.0,
+        ratingText: "Excelente",
+        image: "/images/tour-merzouga.jpg",
+        alt: "Resort con jardines en la Palmeraie de Marrakech",
+      },
+    ],
+    transfers: [
+      { from: "Palmeraie", fromType: "Zona de Marrakech", to: "Marrakech Medina", toType: "Zona de Marrakech", date: "17/11/2026", shared: "Compartido + 25 €", priv: "Privado + 40 €" },
+      { from: "Marrakech Medina", fromType: "Zona de Marrakech", to: "Palmeraie", toType: "Zona de Marrakech", date: "20/11/2026", shared: "Compartido + 25 €", priv: "Privado + 40 €" },
     ] as Transfer[],
   },
 ];
@@ -315,9 +326,9 @@ function PlanPanel({
         <h3 className="text-[12px] font-semibold uppercase tracking-nav">
           Alojamiento
         </h3>
-        {plan.hotels.map((h: Hotel, i) => (
+        {plan.hotels.map((h: Hotel) => (
           <div
-            key={i}
+            key={h.title}
             className="mt-3 flex gap-3 border-t border-line pt-3 first:border-t-0 first:pt-0"
           >
             <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-sm">
@@ -333,16 +344,21 @@ function PlanPanel({
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[15px] font-semibold leading-tight">
-                    {h.name}
+                    {h.title}
                   </p>
                   <p className="mt-1 text-[13px]">
                     <span className="text-amber-500">
                       {"★".repeat(h.stars)}
                     </span>{" "}
-                    <span className="text-[12px] text-muted">{h.stay}</span>
+                    <span className="text-[12px] text-muted">
+                      {h.location} · {h.nights} noches
+                    </span>
                   </p>
-                  <p className="mt-1 text-[12px] text-muted">{h.room}</p>
-                  <p className="mt-1 text-[12px] font-semibold">{h.rating}</p>
+                  <p className="mt-1 text-[12px] text-muted">{h.roomType}</p>
+                  <p className="mt-1 text-[12px] text-muted">{h.mealPlan}</p>
+                  <p className="mt-1 text-[12px] font-semibold">
+                    {h.ratingScore.toFixed(1)} · {h.ratingText}
+                  </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <InfoIcon />
@@ -357,59 +373,6 @@ function PlanPanel({
             </div>
           </div>
         ))}
-      </section>
-
-      {/* Transporte */}
-      <section className="border-t border-line p-4">
-        <h3 className="text-[12px] font-semibold uppercase tracking-nav">
-          Transporte
-        </h3>
-        {FLIGHTS.map((f) => (
-          <div
-            key={f.route}
-            className="mt-3 border-t border-line pt-3 first:border-t-0 first:pt-0"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[13px] font-semibold">
-                {f.route}
-                <span className="ml-2 text-[11px] font-normal text-muted">
-                  {f.date}
-                </span>
-              </p>
-              <InfoIcon />
-            </div>
-            <div className="mt-2 flex items-center gap-3">
-              <div className="w-[120px] shrink-0">
-                <p className="flex items-center gap-1.5 text-[13px] font-semibold leading-tight">
-                  <PlaneIcon className="text-amber-500" />
-                  {f.from}
-                </p>
-                <p className="mt-0.5 text-[12px] text-muted">{f.fromTime}</p>
-              </div>
-              <div className="flex flex-1 flex-col items-center">
-                <div className="flex w-full items-center gap-2">
-                  <span className="h-px flex-1 bg-line" />
-                  <PlaneIcon className="text-brand" />
-                  <span className="h-px flex-1 bg-line" />
-                </div>
-                <p className="mt-1 text-[11px]">{f.duration}</p>
-                <p className="text-[11px] text-muted">Vuelo directo</p>
-              </div>
-              <div className="w-[120px] shrink-0 text-right">
-                <p className="text-[13px] font-semibold leading-tight">{f.to}</p>
-                <p className="mt-0.5 text-[12px] text-muted">{f.toTime}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-        <div className="mt-3 flex justify-end">
-          <button
-            type="button"
-            className="rounded-sm border border-line bg-white px-3 py-1.5 text-[12px] font-medium transition-colors hover:border-brand"
-          >
-            Cambiar
-          </button>
-        </div>
       </section>
 
       {/* Traslados */}
@@ -475,9 +438,9 @@ function PlanPanel({
       </section>
 
       <div className="flex justify-center border-t border-line p-4">
-        <button type="button" className="btn btn-primary px-12">
+        <Link href={resumenHref} className="btn btn-primary px-12">
           Reservar
-        </button>
+        </Link>
       </div>
     </article>
   );
@@ -503,13 +466,13 @@ export default async function TourPage({
           <div>
             <p className="text-[13px] text-muted">Marruecos, 7 dias</p>
             <h1 className="mt-1 text-[30px] font-bold leading-tight md:text-[34px]">
-              Marrakech y Essaouira
+              Marrakech
             </h1>
             <p className="mt-1 text-[15px] font-semibold">
-              A tu aire con estancia en playa
+              Experiencias locales y estancia en la ciudad
             </p>
             <p className="mt-5 text-[13px] leading-relaxed text-muted">
-              Origen : Madrid <span className="mx-1.5">|</span> 16/11/2026 -
+              Zona: Marrakech <span className="mx-1.5">|</span> 16/11/2026 -
               22/11/2026 <span className="mx-1.5">|</span> 6 noches
               <span className="mx-1.5">|</span> 2 Personas
               <span className="mx-1.5">|</span> 1 Habitación

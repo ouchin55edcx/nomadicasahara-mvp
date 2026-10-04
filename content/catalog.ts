@@ -283,7 +283,7 @@ export const products: Product[] = [
     slug: "atlas-palace-spa",
     location: "Hivernage, Marrakech",
     destination: "Marrakech",
-    image: "/images/tour-sahara-lux.jpg",
+    image: "/images/tour-ciudades.jpg",
     price: 142,
     currency: "EUR",
     rating: 9.2,

@@ -1,19 +1,12 @@
-const script = {
-  fontFamily: "'Brush Script MT', 'Snell Roundhand', 'Segoe Script', cursive",
-};
+import BrandLogo from "@/components/BrandLogo";
 
 export default function Header() {
   return (
     <header className="bg-white">
       {/* Brand + utility row */}
       <div className="mx-auto flex h-16 w-full max-w-[1200px] items-center justify-between px-3">
-        <a href="/" className="flex items-baseline gap-2">
-          <span className="text-[22px] font-medium leading-none tracking-tight">
-            Nomadica
-          </span>
-          <span className="text-[28px] leading-none text-brand" style={script}>
-            Sahara
-          </span>
+        <a href="/" className="flex shrink-0 items-center">
+          <BrandLogo />
         </a>
 
         <div className="flex items-center gap-5 text-[13px] text-ink md:gap-6">
