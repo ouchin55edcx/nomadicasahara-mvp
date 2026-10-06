@@ -9,12 +9,12 @@ export default function Header() {
   return (
     <header className="bg-white">
       {/* Brand + utility row */}
-      <div className="mx-auto flex h-16 w-full max-w-[1200px] items-center justify-between px-3">
+      <div className="mx-auto flex h-[72px] w-full max-w-[1440px] items-center justify-between px-6 sm:px-8 lg:px-10">
         <Link href="/" className="flex shrink-0 items-center">
           <BrandLogo />
         </Link>
 
-        <div className="flex items-center gap-5 text-[13px] text-ink md:gap-6">
+        <div className="flex items-center gap-5 text-[12px] text-ink md:gap-8">
           <a
             href={t("common.phoneHref")}
             className="hidden items-center gap-2 transition-colors hover:text-brand sm:flex"
@@ -61,8 +61,8 @@ export default function Header() {
             </span>
           </Link>
 
-          <a
-            href="#"
+          <Link
+            href="/help"
             className="hidden items-center gap-2 transition-colors hover:text-brand lg:flex"
           >
             <svg
@@ -97,10 +97,10 @@ export default function Header() {
             <span className="underline underline-offset-[3px]">
               {t("common.helpCenter")}
             </span>
-          </a>
+          </Link>
 
-          <a
-            href="#"
+          <Link
+            href="/partner/login"
             className="flex items-center gap-1.5 transition-colors hover:text-brand"
           >
             <svg
@@ -135,7 +135,7 @@ export default function Header() {
                 strokeLinejoin="round"
               />
             </svg>
-          </a>
+          </Link>
         </div>
       </div>
     </header>

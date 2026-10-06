@@ -1,22 +1,33 @@
-import {useTranslations} from "next-intl";
+import {useLocale, useTranslations} from "next-intl";
 
 import BrandLogo from "@/components/layout/BrandLogo";
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import {Link} from "@/i18n/navigation";
+import {categoryHref} from "@/lib/hrefs";
+import type {Locale} from "@/i18n/routing";
 
 export default function Footer() {
   const t = useTranslations();
+  const locale = useLocale() as Locale;
 
   const empresa = [
-    t("footer.company.about"),
-    t("footer.company.becomePartner"),
-    t("footer.company.workWithUs"),
+    {label: t("footer.company.about"), href: "/about" as const},
+    {label: t("footer.company.becomePartner"), href: "/partner/login" as const},
+    {label: t("footer.company.workWithUs"), href: "/contact" as const},
   ];
   const enlaces = [
-    t("footer.links.travelGuides"),
-    t("footer.links.terms"),
-    t("footer.links.privacy"),
-    t("footer.links.cookies"),
+    {label: t("footer.links.travelGuides"), href: "/help" as const},
+    {label: t("footer.links.terms"), href: "/terms" as const},
+    {label: t("footer.links.privacy"), href: "/privacy" as const},
+  ];
+  const footerNavigation = [
+    {key: "desert", href: categoryHref("desert", locale)},
+    {key: "saidiaBeach", href: categoryHref("saidia-beach", locale)},
+    {key: "privateTours", href: categoryHref("private-tours", locale)},
+    {key: "airportTransfers", href: categoryHref("transfers", locale)},
+    {key: "dinnerShows", href: categoryHref("dinner-shows", locale)},
+    {key: "hammamSpa", href: categoryHref("hammam-spa", locale)},
+    {key: "multiDay", href: categoryHref("circuits", locale)},
   ];
 
   const socials = [
@@ -39,82 +50,91 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-ink-dark text-white">
-      <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-10 px-3 py-12 sm:grid-cols-2 lg:grid-cols-4">
+    <footer className="site-footer">
+      <nav className="site-footer-nav" aria-label={t("common.mainNavigation")}>
+        <div className="site-footer-nav-inner">
+          {footerNavigation.map((item) => (
+            <Link key={item.key} href={item.href}>{t(`nav.items.${item.key}`)}</Link>
+          ))}
+        </div>
+      </nav>
+
+      <div className="site-footer-main">
         {/* Brand */}
-        <div>
+        <div className="site-footer-brand">
           <Link href="/" className="inline-flex items-center">
             <BrandLogo variant="footer" />
           </Link>
-          <p className="mt-3 text-sm leading-[1.6] text-white/60">
+          <p className="site-footer-tagline">
             {t("footer.tagline")}
           </p>
-          <div className="mt-4 flex items-center gap-3">
+          <div className="site-footer-socials">
             {socials.map((s) => (
-              <a
+              <span
                 key={s.name}
-                href="#"
+                role="img"
                 aria-label={s.name}
-                className="text-white/60 transition-colors hover:text-brand"
+                className="text-white/75"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                   <path d={s.path} />
                 </svg>
-              </a>
+              </span>
             ))}
           </div>
         </div>
 
         {/* Empresa */}
-        <nav>
-          <h3 className="text-[12px] font-semibold uppercase tracking-nav text-white/85">
+        <nav className="site-footer-column">
+          <h3>
             {t("footer.companyHeading")}
           </h3>
-          <ul className="mt-3 space-y-2 text-sm text-white/60">
+          <ul>
             {empresa.map((e) => (
-              <li key={e}>
-                <a href="#" className="transition-colors hover:text-white">
-                  {e}
-                </a>
+              <li key={e.label}>
+                <Link href={e.href}>
+                  {e.label}
+                </Link>
               </li>
             ))}
           </ul>
         </nav>
 
         {/* Enlaces de interés */}
-        <nav>
-          <h3 className="text-[12px] font-semibold uppercase tracking-nav text-white/85">
+        <nav className="site-footer-column">
+          <h3>
             {t("footer.linksHeading")}
           </h3>
-          <ul className="mt-3 space-y-2 text-sm text-white/60">
+          <ul>
             {enlaces.map((e) => (
-              <li key={e}>
-                <a href="#" className="transition-colors hover:text-white">
-                  {e}
-                </a>
+              <li key={e.label}>
+                <Link href={e.href}>
+                  {e.label}
+                </Link>
               </li>
             ))}
           </ul>
         </nav>
 
         {/* Idioma */}
-        <div>
-          <h3 className="text-[12px] font-semibold uppercase tracking-nav text-white/85">
+        <div className="site-footer-column site-footer-international">
+          <h3>
             {t("footer.languageHeading")}
           </h3>
-          <LanguageSwitcher className="mt-3 text-white/70" />
-          <p className="mt-3 text-xs leading-[1.6] text-white/45">
+          <LanguageSwitcher className="site-footer-language mt-3 text-white/85" />
+          <p className="site-footer-hours">
             {t("footer.supportHours")}
           </p>
         </div>
       </div>
 
-      <div className="border-t border-white/10">
-        <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-1 px-3 py-5 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between">
+      <div className="site-footer-bottom">
+        <div className="site-footer-bottom-inner">
           <p>{t("footer.copyright")}</p>
           <p>{t("footer.license")}</p>
         </div>
       </div>
+      <a className="site-footer-top" href="#" aria-label="Volver arriba">↑</a>
     </footer>
   );
 }

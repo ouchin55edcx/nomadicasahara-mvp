@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 export default function BrandLogo({
   variant = "header",
   className = "",
@@ -8,17 +6,21 @@ export default function BrandLogo({
   className?: string;
 }) {
   return (
-    <Image
-      src={
-        variant === "footer"
-          ? "/images/logo_nomadica-footer.png"
-          : "/images/logo_nomadica-trim.png"
-      }
-      alt="Nomadica Sahara"
-      width={578}
-      height={92}
-      priority={variant === "header"}
-      className={`block h-8 w-auto max-w-[58vw] object-contain sm:h-10 sm:max-w-[270px] ${className}`}
-    />
+    <span
+      aria-label="Toledano viajes"
+      className={`inline-flex items-baseline gap-2 whitespace-nowrap ${
+        variant === "footer" ? "text-white" : "text-[#171918]"
+      } ${className}`}
+    >
+      <span className="text-[27px] font-semibold tracking-tight sm:text-[31px]">
+        Toledano
+      </span>
+      <span
+        className="-rotate-2 text-[31px] font-black leading-none tracking-[-0.08em] sm:text-[37px]"
+        style={{fontFamily: "'Brush Script MT', 'Segoe Script', cursive"}}
+      >
+        viajes
+      </span>
+    </span>
   );
 }

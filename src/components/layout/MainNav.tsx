@@ -2,55 +2,48 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
+import {useParams} from "next/navigation";
 
+import BrandLogo from "@/components/layout/BrandLogo";
 import { Link, usePathname } from "@/i18n/navigation";
+import {categoryHref, destinationHref} from "@/lib/hrefs";
+import type {Locale} from "@/i18n/routing";
 
-type NavLink = { key: string; href: string };
-type NavItem = { key: string; href: string; links: NavLink[] };
+type NavLink = { key: string; href: {pathname: string; params: Record<string, string>} };
+type NavItem = { key: string; href: {pathname: string; params: Record<string, string>}; links: NavLink[] };
 
 // Hrefs are canonical (locale-independent) so the same entry serves every
 // language; only the labels come from the message catalogs.
-const NAV_ITEMS: NavItem[] = [
-  {
-    key: "desert",
-    href: "/excursiones-desierto-marruecos",
-    links: [
-      { key: "agafay", href: "/excursion-desierto-agafay" },
-      { key: "zagora", href: "/excursion-desierto-zagora" },
-      { key: "merzouga", href: "/excursion-desierto-merzouga" },
-    ],
-  },
-  {
-    key: "departures",
-    href: "/excursiones-marrakech",
-    links: [
-      { key: "marrakech", href: "/excursiones-marrakech" },
-      { key: "saidia", href: "/excursiones-saidia" },
-    ],
-  },
-  { key: "privateTours", href: "/excursiones-privadas-marruecos", links: [] },
-  { key: "airportTransfers", href: "/traslados-aeropuerto-marrakech", links: [] },
-  { key: "dinnerShow", href: "/cena-espectaculo-marrakech", links: [] },
-  { key: "hotels", href: "/hoteles-marrakech", links: [] },
-  { key: "hammamSpa", href: "/hammam-spa-marrakech", links: [] },
+const NAV_ITEMS = (locale: Locale): NavItem[] => [
+  {key: "desert", href: categoryHref("desert", locale), links: [
+    {key: "agafay", href: destinationHref("agafay", locale)},
+    {key: "zagora", href: destinationHref("zagora", locale)},
+    {key: "merzouga", href: destinationHref("merzouga", locale)},
+  ]},
+  {key: "saidiaBeach", href: categoryHref("saidia-beach", locale), links: []},
+  {key: "privateTours", href: categoryHref("private-tours", locale), links: []},
+  {key: "airportTransfers", href: categoryHref("transfers", locale), links: []},
+  {key: "dinnerShows", href: categoryHref("dinner-shows", locale), links: []},
+  {key: "hammamSpa", href: categoryHref("hammam-spa", locale), links: []},
+  {key: "multiDay", href: categoryHref("circuits", locale), links: []},
 ];
 
 const CHEVRON = "M6 9l6 6 6-6";
 
-const script = {
-  fontFamily: "'Brush Script MT', 'Snell Roundhand', 'Segoe Script', cursive",
-};
-
 export default function MainNav() {
   const t = useTranslations();
+  const locale = useLocale() as Locale;
   const pathname = usePathname();
+  const routeParams = useParams<Record<string, string | string[]>>();
   const [active, setActive] = useState(-1);
+  const [hovered, setHovered] = useState<number | null>(null);
   const [openMenu, setOpenMenu] = useState<number | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [openSection, setOpenSection] = useState<number | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const items = NAV_ITEMS.map((item) => ({
+  const items = NAV_ITEMS(locale).map((item) => ({
     ...item,
     label: t(`nav.items.${item.key}`),
     links: item.links.map((link) => ({
@@ -82,13 +75,14 @@ export default function MainNav() {
   }, []);
 
   useEffect(() => {
+    const matches = (href: {pathname: string; params: Record<string, string>}) => href.pathname === pathname && Object.entries(href.params).every(([key, value]) => routeParams[key] === value);
     setActive(
       items.findIndex(
         (it) =>
-          it.href === pathname || it.links.some((link) => link.href === pathname),
+          matches(it.href) || it.links.some((link) => matches(link.href)),
       ),
     );
-  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pathname, routeParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     document.body.style.overflow = sheetOpen ? "hidden" : "";
@@ -105,7 +99,10 @@ export default function MainNav() {
     <nav
       aria-label={t("common.mainNavigation")}
       className="relative z-30 bg-white"
-      onMouseLeave={scheduleClose}
+      onMouseLeave={() => {
+        scheduleClose();
+        setHovered(null);
+      }}
     >
       {/* Mobile trigger */}
       <div className="flex h-11 items-center justify-between border-b border-line px-3 lg:hidden">
@@ -132,8 +129,8 @@ export default function MainNav() {
 
       {/* Desktop nav: category row spanning the full width, ECI-style */}
       <div className="hidden border-b border-line lg:block">
-        <div className="mx-auto w-full max-w-[1200px] overflow-x-auto px-3">
-          <ul className="flex h-[60px] w-max min-w-full items-stretch justify-between gap-6">
+        <div className="w-full overflow-x-auto px-6">
+          <ul className="mx-auto flex h-[60px] w-max min-w-full items-stretch justify-center gap-2 xl:gap-3">
             {items.map((it, i) => (
               <li key={it.key} className="flex">
                 <Link
@@ -141,18 +138,20 @@ export default function MainNav() {
                   aria-expanded={it.links.length ? openMenu === i : undefined}
                   onMouseEnter={() => {
                     cancelClose();
-                    setActive(i);
+                    setHovered(i);
                     setOpenMenu(it.links.length ? i : null);
                   }}
                   onFocus={() => {
-                    setActive(i);
+                    setHovered(i);
                     setOpenMenu(it.links.length ? i : null);
                   }}
-                  onClick={() => setActive(i)}
-                  className={`flex select-none items-center self-stretch whitespace-nowrap border-b-2 px-0.5 text-center text-[13px] uppercase tracking-nav transition-colors ${
-                    active === i
-                      ? "border-ink font-semibold text-ink"
-                      : "border-transparent font-medium text-ink hover:border-line-soft"
+                  onBlur={() => setHovered(null)}
+                  className={`flex h-[42px] select-none items-center self-center whitespace-nowrap border-b-2 px-1.5 text-center text-[13px] uppercase tracking-[0.08em] transition-colors xl:px-2 xl:text-[14px] ${
+                    hovered === i
+                      ? "border-[#26372D] bg-[#D8EBDD] font-medium text-ink"
+                      : active === i
+                        ? "border-ink font-semibold text-ink"
+                        : "border-transparent font-medium text-ink"
                   }`}
                 >
                   {it.label}
@@ -203,12 +202,7 @@ export default function MainNav() {
           />
           <div className="absolute inset-y-0 right-0 flex w-[min(380px,90vw)] flex-col bg-white shadow-2xl">
             <div className="flex h-14 shrink-0 items-center justify-between border-b border-line px-4">
-              <span className="flex items-baseline gap-1.5">
-                <span className="text-[17px] font-medium">Nomadica</span>
-                <span className="text-[22px] leading-none text-brand" style={script}>
-                  Sahara
-                </span>
-              </span>
+              <BrandLogo />
               <button
                 type="button"
                 aria-label={t("common.closeMenu")}
@@ -336,12 +330,12 @@ export default function MainNav() {
                 {t("common.phone")}
               </a>
               <div className="flex gap-2">
-                <Link href="/booking/checkout" className="btn btn-primary flex-1">
+                <Link href="/tours" className="btn btn-primary flex-1">
                   {t("common.reserveNow")}
                 </Link>
-                <a href="#" className="btn btn-secondary flex-1">
+                <Link href="/partner/login" className="btn btn-secondary flex-1">
                   {t("common.signIn")}
-                </a>
+                </Link>
               </div>
             </div>
           </div>

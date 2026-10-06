@@ -5,7 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "validate:catalog": "node scripts/validate-catalog.mjs",
+    "check-links": "node scripts/check-links.mjs",
+    "validate:data": "node scripts/validate-catalog.mjs",
+    "check:contrast": "node scripts/check-contrast.mjs",
+    "test:pricing": "node scripts/test-pricing.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

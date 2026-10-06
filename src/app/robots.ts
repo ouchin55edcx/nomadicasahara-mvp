@@ -12,7 +12,8 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           "/api/",
           "/*/partner/",
-          "/*/booking/",
+          "/*/book/",
+          "/*/reservar/",
           "/*/dashboard/",
         ],
       },

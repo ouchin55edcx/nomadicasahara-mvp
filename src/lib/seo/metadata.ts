@@ -15,13 +15,20 @@ export function absoluteUrl(locale: string, pathname = "") {
   return `${siteUrl}${localePath(locale, pathname)}`;
 }
 
+function localizedPathname(locale: string, pathname = "") {
+  const route = routing.pathnames[pathname as keyof typeof routing.pathnames];
+  if (!route) return pathname;
+  if (typeof route === "string") return route;
+  return (route as Record<string, string>)[locale] ?? pathname;
+}
+
 /**
  * hreflang map for one locale-independent pathname, e.g.
- * { es: "https://…/es/excursiones-marruecos", en: "…/en/…", pt: "…/pt/…" }
+ * { es: "https://…/es/excursiones", en: "…/en/tours", pt: "…/pt/passeios" }
  */
 export function languageAlternates(pathname = "") {
   return Object.fromEntries(
-    routing.locales.map((locale) => [locale, absoluteUrl(locale, pathname)]),
+    routing.locales.map((locale) => [locale, absoluteUrl(locale, localizedPathname(locale, pathname))]),
   );
 }
 
@@ -45,13 +52,13 @@ export function pageMetadata({
     title,
     description,
     alternates: {
-      canonical: absoluteUrl(locale, pathname),
+      canonical: absoluteUrl(locale, localizedPathname(locale, pathname)),
       languages: languageAlternates(pathname),
     },
     openGraph: {
       title,
       description,
-      url: absoluteUrl(locale, pathname),
+      url: absoluteUrl(locale, localizedPathname(locale, pathname)),
       siteName: "Nomadica Sahara",
       locale: ogLocale(locale as Locale),
       type: "website",

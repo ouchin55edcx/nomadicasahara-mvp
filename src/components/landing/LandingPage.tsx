@@ -1,7 +1,14 @@
 'use client';
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import Image from "next/image";
-import { CarFront, ChevronRight, Compass, Hotel, Info, MapPin, Sparkles, Utensils, Waves } from "lucide-react";
+import {useLocale, useTranslations} from "next-intl";
+import { CarFront, ChevronLeft, ChevronRight, Compass, MapPin, Sparkles, Utensils, Waves } from "lucide-react";
+import TourCard from "@/components/TourCard";
+import {allTourRecords} from "@/data/static/tour-catalog";
+import type {TourRecord} from "@/types/tour-catalog";
+import {Link} from "@/i18n/navigation";
+import {categoryHref, destinationHref, localizedCategoryPath, localizedToursPath, tourHref} from "@/lib/hrefs";
+import type {Locale} from "@/i18n/routing";
 
 /* ============================================================
    VIAJES EL CORTE INGLÉS — Landing page clone (single file)
@@ -17,19 +24,9 @@ const IMG = {
   circuitos: "/images/tour-kasbahs.jpg",
   jovenes: "/images/hammam-wellness.jpg",
   parques: "/images/tour-merzouga.jpg",
-  grandes: "/images/tour-sahara-lux.jpg",
-  amalfi: "/images/tour-atlas.jpg",
-  canaria: "/images/tour-kasbahs.jpg",
-  portosanto: "/images/tour-merzouga.jpg",
-  egipto: "/images/tour-gastronomia.jpg",
-  tenerife: "/images/tour-atlas.jpg",
   grancanaria: "/images/tour-costa.jpg",
-  roma: "/images/tour-ciudades.jpg",
-  washington: "/images/tour-ciudades.jpg",
-  suiza: "/images/tour-atlas.jpg",
-  crucero: "/images/banner-essaouira.jpg",
   costasol: "/images/tour-costa.jpg",
-costaluz: "/images/banner-essaouira.jpg",
+  costaluz: "/images/banner-essaouira.jpg",
   lisboa: "/images/tour-ciudades.jpg",
 };
 
@@ -105,13 +102,6 @@ const heroSlides = [
     badges: [["Menú marroquí", "tradicional"], ["Música en directo", "incluida"], ["Veladas", "cada tarde"]],
   },
   {
-    image: "/images/tour-fez.jpg",
-    category: "HOTELES Y RIADS",
-    title: "DUERME EN EL CORAZÓN DE LA MEDINA",
-    subtitle: "Riads con encanto y hoteles seleccionados",
-    badges: [["Riads", "con patio"], ["Piscina y spa", "disponibles"], ["Desde 75€", "por noche"]],
-  },
-  {
     image: "/images/hammam-wellness.jpg",
     category: "HAMMAM Y SPA",
     title: "REGÁLATE UNA PAUSA",
@@ -120,39 +110,24 @@ const heroSlides = [
   },
 ];
 
+const homeTours = (ids: string[]) => ids.map((id) => allTourRecords.find((tour) => tour.id === id)).filter((tour): tour is TourRecord => Boolean(tour));
+const featuredTours = homeTours(["agafay-sunset-dinner", "marrakech-private-city", "fantasia-dinner-show", "hammam-massage", "saidia-beach-getaway"]);
+const featuredIds = new Set(featuredTours.map((tour) => tour.id));
+const cheapest = (tour: TourRecord) => tour.pricing.kind === "quote" ? Infinity : tour.pricing.kind === "single" ? tour.pricing.amount : Math.min(...Object.values(tour.pricing.tiers));
+const valueTours = allTourRecords.filter((tour) => !featuredIds.has(tour.id) && tour.details.layout !== "service" && cheapest(tour) < 50);
+const eveningTours = allTourRecords.filter((tour) => !featuredIds.has(tour.id) && (tour.id.startsWith("hammam-") || tour.id.includes("dinner-show")));
+const shownBeforeCircuits = new Set([...featuredIds, ...valueTours.map((tour) => tour.id), ...eveningTours.map((tour) => tour.id)]);
+const circuitTours = allTourRecords.filter((tour) => tour.details.layout === "multi-day" && !shownBeforeCircuits.has(tour.id));
+const shownBeforePrivate = new Set([...shownBeforeCircuits, ...circuitTours.map((tour) => tour.id)]);
+const privateTours = homeTours(["marrakech-private-city", "ouzoud-private-day"]).filter((tour) => !shownBeforePrivate.has(tour.id));
+const transferTours = homeTours(["marrakech-airport-transfer"]);
 const eligeTuViaje = [
-  { img: IMG.puente, label: "AGAFAY", action: "Aventura" },
-  { img: IMG.parques, label: "MERZOUGA", action: "Descubre" },
-  { img: IMG.circuitos, label: "RUTA DE KASBAHS", action: "Explora" },
-  { img: IMG.familias, label: "MARRAKECH", action: "Conócela" },
-  { img: IMG.grancanaria, label: "COSTA ATLÁNTICA", action: "Escápate" },
-  { img: IMG.jovenes, label: "HAMMAM Y SPA", action: "Relájate" },
-];
-
-const ultimaHora = [
-  { img: IMG.amalfi, tag: "AGAFAY · AVENTURA", title: "Agafay: quad y puesta de sol", sub: "Recogida · 4-5 horas", price: "49,99€", icon: Compass },
-  { img: IMG.canaria, tag: "DESIERTO DEL DRAA", title: "Zagora: kasbahs y noche en el desierto", sub: "2 días / 1 noche", price: "189€", icon: Compass },
-  { img: IMG.portosanto, tag: "ERG CHEBBI", title: "Merzouga: dromedario y campamento", sub: "3 días / 2 noches", price: "289€", icon: Hotel },
-  { img: IMG.egipto, tag: "CENA Y ESPECTÁCULO", title: "Cena marroquí bajo las estrellas", sub: "Menú y música en directo", price: "35€", icon: Utensils },
-];
-
-const puenteOctubre = [
-  { img: IMG.tenerife, title: "Agafay: quad y puesta de sol", sub: "Aventura y recogida desde Marrakech", description: "Explora el desierto de piedra en quad y termina la tarde con una puesta de sol sobre el paisaje de Agafay.", price: "49,99€", duration: "4-5 horas" },
-  { img: IMG.grancanaria, title: "Saidia y la costa mediterránea", sub: "Mar, paseo en barco y sabores locales", description: "Disfruta de la costa mediterránea marroquí con tiempo para navegar, descansar y descubrir Saidia.", price: "65€", duration: "6 horas" },
-];
-
-const vuelosFinde = [
-  { city: "Agafay", price: "49,99€", duration: "4-5 horas" },
-  { city: "Zagora", price: "189€", duration: "2 días / 1 noche" },
-  { city: "Merzouga", price: "289€", duration: "3 días / 2 noches" },
-  { city: "Marrakech", price: "29€", duration: "3 horas" },
-];
-
-const vuelosDirectos = [
-  { city: "Madrid - Oporto", price: "39€", duration: "Ida y vuelta" },
-  { city: "Madrid - San Juan", price: "651€", duration: "Ida y vuelta" },
-  { city: "Madrid - Tokio", price: "630€", duration: "Ida y vuelta" },
-  { city: "Madrid - Doha", price: "526€", duration: "Ida y vuelta" },
+  {img: IMG.puente, label: "AGAFAY", action: "Aventura", city: "agafay" as const},
+  {img: IMG.parques, label: "MERZOUGA", action: "Descubre", city: "merzouga" as const},
+  {img: IMG.circuitos, label: "RUTA DE KASBAHS", action: "Explora", category: "circuits" as const},
+  {img: IMG.familias, label: "MARRAKECH", action: "Conócela", city: "marrakech" as const},
+  {img: IMG.grancanaria, label: "SAIDIA", action: "Escápate", category: "saidia-beach" as const},
+  {img: IMG.jovenes, label: "HAMMAM Y SPA", action: "Relájate", category: "hammam-spa" as const},
 ];
 
 const guiasViaje = [
@@ -161,50 +136,64 @@ const guiasViaje = [
   { img: IMG.lisboa, title: "Lisboa", sub: "Un tranvía de saudade" },
 ];
 
-const searchTabs = [
-  { label: "Excursiones", path: "/excursiones-marruecos", icon: Compass },
-  { label: "Desierto", path: "/excursiones-desierto-marruecos", icon: Waves },
-  { label: "Hoteles", path: "/hoteles-marrakech", icon: Hotel },
-  { label: "Viajes privados", path: "/excursiones-privadas-marruecos", icon: Compass },
-  { label: "Traslados", path: "/traslados-aeropuerto-marrakech", icon: CarFront },
-  { label: "Cena espectáculo", path: "/cena-espectaculo-marrakech", icon: Utensils },
-  { label: "Hammam y spa", path: "/hammam-spa-marrakech", icon: Sparkles },
+const tabSpecs = [
+  {key: "desert", category: "desert" as const, icon: Waves},
+  {key: "saidiaBeach", category: "saidia-beach" as const, icon: Compass},
+  {key: "privateTours", category: "private-tours" as const, icon: Compass},
+  {key: "airportTransfers", category: "transfers" as const, icon: CarFront},
+  {key: "dinnerShows", category: "dinner-shows" as const, icon: Utensils},
+  {key: "hammamSpa", category: "hammam-spa" as const, icon: Sparkles},
+  {key: "multiDay", category: "circuits" as const, icon: Compass},
 ];
 
-function MarketplaceProductCard({
-  image,
-  tag,
-  title,
-  meta,
-  description,
-  price,
-  duration,
-  actionLabel = "RESERVA YA",
+function ActivityProductRail({
+  products: items,
+  renderCard,
+  label,
+  previousLabel,
+  nextLabel,
 }: {
-  image: string;
-  tag?: string;
-  title: string;
-  meta: string;
-  description: string;
-  price: string;
-  duration: string;
-  actionLabel?: string;
+  products: TourRecord[];
+  renderCard: (product: TourRecord) => React.ReactNode;
+  label: string;
+  previousLabel: string;
+  nextLabel: string;
 }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const isCarousel = items.length > 4;
+  const scroll = (direction: -1 | 1) => {
+    const track = trackRef.current;
+    if (!track) return;
+    const firstCard = track.firstElementChild;
+    const cardWidth = firstCard?.getBoundingClientRect().width ?? 270;
+    const gap = Number.parseFloat(window.getComputedStyle(track).columnGap) || 0;
+    track.scrollBy({left: direction * (cardWidth + gap) * 4, behavior: "smooth"});
+  };
+
   return (
-    <article className="marketplace-product">
-      <div className="marketplace-product-image" style={{ backgroundImage: `url(${image})` }}>
-        {tag ? <span className="marketplace-product-tag">{tag}</span> : null}
-      </div>
-      <div className="marketplace-product-body">
-        <h4>{title}</h4>
-        <p className="marketplace-product-meta">{meta}</p>
-        <p className="marketplace-product-description">{description}</p>
-        <div className="marketplace-product-footer">
-          <span className="marketplace-product-price"><small>desde</small><b>{price}</b><small>{duration}</small></span>
-          <button type="button" className="btn-reservar">{actionLabel} <span aria-hidden="true">›</span></button>
+    <div className="home-activity-rail">
+      {isCarousel ? (
+        <div className="home-activity-carousel-controls">
+          <button type="button" aria-label={previousLabel} onClick={() => scroll(-1)}>
+            <ChevronLeft aria-hidden="true" />
+          </button>
+          <button type="button" aria-label={nextLabel} onClick={() => scroll(1)}>
+            <ChevronRight aria-hidden="true" />
+          </button>
         </div>
+      ) : null}
+      <div
+        ref={trackRef}
+        aria-label={label}
+        className={`home-activity-grid${isCarousel ? " home-activity-carousel" : ""}`}
+      >
+        {items.map((product) => (
+          <div key={product.id} className="home-activity-item">
+            {renderCard(product)}
+          </div>
+        ))}
       </div>
-    </article>
+    </div>
   );
 }
 
@@ -220,6 +209,30 @@ export default function LandingPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const activeHero = heroSlides[activeHeroIndex];
+  const locale = useLocale() as Locale;
+  const sectionT = useTranslations("homeActivitySections");
+  const navT = useTranslations("nav.items");
+  const routeT = useTranslations("RoutePages");
+  const searchTabs = tabSpecs.map((tab) => ({...tab, label: navT(tab.key), path: localizedCategoryPath(locale, tab.category)}));
+
+  const formatPrice = (price: number) =>
+    `${price.toLocaleString(locale, {maximumFractionDigits: 2})} €`;
+  const productCard = (product: TourRecord, metaOverride?: string) => (
+    <TourCard
+      key={product.id}
+      image={product.image}
+      imageAlt={product.title[locale]}
+      tag={product.category[locale]}
+      title={product.title[locale]}
+      meta={metaOverride ?? product.destination[locale]}
+      description={product.summary[locale]}
+      price={cheapest(product) === Infinity ? undefined : formatPrice(cheapest(product))}
+      duration={product.duration[locale]}
+      priceLabel={sectionT("priceFrom")}
+      actionLabel={sectionT("bookNow")}
+      actionHref={tourHref(product)}
+    />
+  );
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -234,52 +247,11 @@ export default function LandingPage() {
   };
 
   const renderSearchFields = () => {
-    switch (activeTab) {
-      case 1:
-        return <>
-          <SearchField label="Destino"><SearchSelect name="destino"><option value="">Cualquier zona del desierto</option><option>Agafay</option><option>Zagora</option><option>Merzouga</option></SearchSelect></SearchField>
-          <SearchField label="Fecha"><input className="search-control" type="date" name="fecha" /></SearchField>
-          <SearchField label="Duración"><SearchSelect name="duracion"><option value="">Cualquier duración</option><option value="0-4">Hasta 4 horas</option><option value="4-8">4-8 horas</option><option value="24-1000">Varios días</option></SearchSelect></SearchField>
-        </>;
-      case 2:
-        return <>
-          <SearchField label="Destino"><input className="search-control" name="destino" defaultValue="Marrakech" placeholder="Ciudad, región o alojamiento" /></SearchField>
-          <SearchField label="Fecha de entrada"><input className="search-control" type="date" name="fecha" /></SearchField>
-          <SearchField label="Fecha de salida"><input className="search-control" type="date" name="salida" /></SearchField>
-          <SearchField label="Ocupación"><SearchSelect name="personas"><option value="2">2 huéspedes, 1 habitación</option><option value="1">1 huésped, 1 habitación</option><option value="4">4 huéspedes, 2 habitaciones</option></SearchSelect></SearchField>
-        </>;
-      case 3:
-        return <>
-          <SearchField label="Destino"><SearchSelect name="destino"><option value="">Elige tu ruta</option><option>Atlas</option><option>Merzouga</option><option>Zagora</option></SearchSelect></SearchField>
-          <SearchField label="Fecha de salida"><input className="search-control" type="date" name="fecha" /></SearchField>
-          <SearchField label="Tamaño del grupo"><SearchSelect name="personas"><option value="2">1-2 personas</option><option value="4">3-4 personas</option><option value="6">5-6 personas</option></SearchSelect></SearchField>
-        </>;
-      case 4:
-        return <>
-          <SearchField label="Punto de recogida"><input className="search-control" name="origen" defaultValue="Aeropuerto de Marrakech" /></SearchField>
-          <SearchField label="Destino"><input className="search-control" name="destino" defaultValue="Marrakech" /></SearchField>
-          <SearchField label="Fecha"><input className="search-control" type="date" name="fecha" /></SearchField>
-          <SearchField label="Pasajeros"><SearchSelect name="pasajeros"><option value="2">Hasta 2 pasajeros</option><option value="4">Hasta 4 pasajeros</option><option value="8">Hasta 8 pasajeros</option></SearchSelect></SearchField>
-        </>;
-      case 5:
-        return <>
-          <SearchField label="Fecha"><input className="search-control" type="date" name="fecha" /></SearchField>
-          <SearchField label="Hora"><SearchSelect name="hora"><option value="">Cualquier hora</option><option value="19">Desde las 19:00</option><option value="20">Desde las 20:00</option></SearchSelect></SearchField>
-          <SearchField label="Menú"><SearchSelect name="menu"><option value="">Todos los menús</option><option value="marroquí">Marroquí</option><option value="tradicional">Tradicional</option></SearchSelect></SearchField>
-        </>;
-      case 6:
-        return <>
-          <SearchField label="Tratamiento"><SearchSelect name="tratamiento"><option value="">Todos los rituales</option><option value="hammam">Hammam tradicional</option><option value="masaje">Masaje</option><option value="argán">Ritual de argán</option></SearchSelect></SearchField>
-          <SearchField label="Fecha"><input className="search-control" type="date" name="fecha" /></SearchField>
-          <SearchField label="Duración"><SearchSelect name="duracion"><option value="">Cualquier duración</option><option value="60">60 minutos</option><option value="90">90 minutos o más</option></SearchSelect></SearchField>
-        </>;
-      default:
-        return <>
-          <SearchField label="Destino"><SearchSelect name="destino"><option value="">¿Qué quieres descubrir?</option><option>Agafay</option><option>Zagora</option><option>Merzouga</option><option>Marrakech</option><option>Saidia</option></SearchSelect></SearchField>
-          <SearchField label="Fecha"><input className="search-control" type="date" name="fecha" /></SearchField>
-          <SearchField label="Duración"><SearchSelect name="duracion"><option value="">Cualquier duración</option><option value="0-4">Hasta 4 horas</option><option value="4-8">4-8 horas</option><option value="8-24">Día completo</option><option value="24-1000">Varios días</option></SearchSelect></SearchField>
-        </>;
-    }
+    return <>
+      <SearchField label={routeT("search")}><input className="search-control" type="search" name="q" placeholder={routeT("allTours")} /></SearchField>
+      <SearchField label={routeT("city")}><SearchSelect name="city"><option value="">{routeT("allCities")}</option><option value="agafay">Agafay</option><option value="zagora">Zagora</option><option value="merzouga">Merzouga</option><option value="marrakech">{locale === "pt" ? "Marraquexe" : "Marrakech"}</option></SearchSelect></SearchField>
+      <SearchField label={routeT("days")}><SearchSelect name="days"><option value="">{routeT("anyLength")}</option><option value="short">{routeT("shortTrip")}</option><option value="multi">{routeT("multiDay")}</option></SearchSelect></SearchField>
+    </>;
   };
 
   return (
@@ -291,25 +263,13 @@ export default function LandingPage() {
         {/* ===== HERO ===== */}
         <section className="hero">
           <div key={activeHeroIndex} className="hero-image">
-            <Image src={activeHero.image} alt={activeHero.category} fill sizes="50vw" unoptimized priority={activeHeroIndex === 0} className="hero-photo" />
+            <Image src={activeHero.image} alt={activeHero.category} fill sizes="100vw" unoptimized priority={activeHeroIndex === 0} className="hero-photo" />
           </div>
           <button type="button" className="hero-arrow left" aria-label="Imagen anterior" onClick={() => moveHero(-1)}>‹</button>
-          <div className="hero-promo">
-            <div className="hero-promo-head">
-              <small>{activeHero.category}</small>
-              <div className="hero-brandline">
-                <h2>{activeHero.title}</h2>
-              </div>
-              <p className="hero-tagline">PONEMOS RUMBO A TUS SUEÑOS</p>
-            </div>
-            <div className="hero-badges">
-              {activeHero.badges.map(([title, detail]) => <div key={title} className="hero-badge"><b>{title}</b><span>{detail}</span></div>)}
-            </div>
-          </div>
           <button type="button" className="hero-arrow right" aria-label="Imagen siguiente" onClick={() => moveHero(1)}>›</button>
         </section>
-        <div className="hero-subline vci-divider">
-          <span>{activeHero.subtitle}</span>
+        <div className="hero-subline vci-divider" aria-live="polite" aria-atomic="true">
+          <span key={activeHeroIndex}>{activeHero.subtitle}</span>
           <span className="dots" aria-label="Seleccionar imagen del hero">
             {heroSlides.map((slide, index) => <button key={slide.category} type="button" className={index === activeHeroIndex ? "on" : ""} aria-label={`Mostrar ${slide.category}`} aria-pressed={index === activeHeroIndex} onClick={() => setActiveHeroIndex(index)} />)}
           </span>
@@ -345,98 +305,75 @@ export default function LandingPage() {
             <h3 className="journey-heading">Elige tu viaje</h3>
             <div className="journey-grid">
               {eligeTuViaje.map((c) => (
-                <a key={c.label} href="#" className="journey-card" style={{ backgroundImage: `url(${c.img})` }}>
+                <Link key={c.label} href={c.city ? destinationHref(c.city, locale) : categoryHref(c.category!, locale)} className="journey-card" style={{ backgroundImage: `url(${c.img})` }}>
                   <span className="journey-content">
                     <span className="journey-title">{c.label}</span>
                     <span className="journey-action">{c.action}<span aria-hidden="true">›</span></span>
                   </span>
-                </a>
+                </Link>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ===== OFERTAS ÚLTIMA HORA ===== */}
-        <section className="last-minute-section">
+        {/* ===== RECOMMENDED ACTIVITY SECTIONS ===== */}
+        <section className="home-activity-section">
           <div className="wrap">
-            <div className="last-minute-heading">
-              <h3>OFERTAS ÚLTIMA HORA</h3>
-              <a href="#">Ver más <ChevronRight aria-hidden="true" /></a>
+            <h3 className="home-activity-heading">{sectionT("bestForYou")}</h3>
+            <ActivityProductRail products={featuredTours} renderCard={productCard} label={sectionT("bestForYou")} previousLabel={sectionT("previous")} nextLabel={sectionT("next")} />
+          </div>
+        </section>
+
+        <section className="home-activity-section">
+          <div className="wrap">
+            <h3 className="home-activity-heading">{sectionT("under50")}</h3>
+            <ActivityProductRail products={valueTours} renderCard={productCard} label={sectionT("under50")} previousLabel={sectionT("previous")} nextLabel={sectionT("next")} />
+          </div>
+        </section>
+
+        <section className="home-activity-section home-activity-section-alt">
+          <div className="wrap">
+            <h3 className="home-activity-heading">{sectionT("eveningsWellness")}</h3>
+            <ActivityProductRail products={eveningTours} renderCard={productCard} label={sectionT("eveningsWellness")} previousLabel={sectionT("previous")} nextLabel={sectionT("next")} />
+          </div>
+        </section>
+
+        <section className="home-activity-section">
+          <div className="wrap">
+            <div className="home-activity-groups">
+              <div>
+                <h3 className="home-activity-heading">{sectionT("recommendedCircuits")}</h3>
+                <ActivityProductRail
+                  products={circuitTours}
+                  renderCard={(product) => productCard(product, `${locale === "pt" ? "Marraquexe" : "Marrakech"} → ${product.destination[locale]} → ${locale === "pt" ? "Marraquexe" : "Marrakech"}`)}
+                  label={sectionT("recommendedCircuits")}
+                  previousLabel={sectionT("previous")}
+                  nextLabel={sectionT("next")}
+                />
+              </div>
+              <div>
+                <h3 className="home-activity-heading">{sectionT("privateTours")}</h3>
+                <ActivityProductRail products={privateTours} renderCard={productCard} label={sectionT("privateTours")} previousLabel={sectionT("previous")} nextLabel={sectionT("next")} />
+              </div>
             </div>
-            <div className="last-minute-grid">
-              {ultimaHora.map((o) => (
-                <article key={o.title} className="last-minute-card">
-                  <div className="last-minute-image" style={{ backgroundImage: `url(${o.img})` }}>
-                    <span className="last-minute-tag">{o.tag}</span>
-                    <span className="last-minute-type" aria-hidden="true"><o.icon /></span>
-                    <div className="last-minute-price">
-                      <span className="last-minute-price-copy"><small>desde</small><b>{o.price}</b><small>{o.sub}</small></span>
-                      <span className="last-minute-info" aria-label="Más información"><Info aria-hidden="true" /></span>
-                    </div>
-                  </div>
-                  <div className="last-minute-body">
-                    <h4>{o.title}</h4>
-                  </div>
-                </article>
+          </div>
+        </section>
+
+        <section className="home-activity-section">
+          <div className="wrap">
+            <h3 className="home-activity-heading">{sectionT("airportTransfers")}</h3>
+            <div className="home-transfer-list">
+              {transferTours.map((product) => (
+                <Link key={product.id} href={tourHref(product)} className="home-transfer-row">
+                  <span className="home-transfer-description">
+                    <b>{product.title[locale]}</b>
+                    <small>{product.summary[locale]}</small>
+                    <small>{product.destination[locale]}</small>
+                  </span>
+                  <span className="home-transfer-price"><small>{sectionT("priceFrom")}</small><b>{formatPrice(cheapest(product))}</b></span>
+                  <span className="home-transfer-arrow" aria-hidden="true">›</span>
+                </Link>
               ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ===== PUENTE DE OCTUBRE / ESCAPADAS DE OTOÑO ===== */}
-        <section className="section alt marketplace-section">
-          <div className="wrap duo">
-            <div>
-              <h3 className="sec-title">Experiencias desde Marrakech</h3>
-              <div className="stack october-offers">
-                {puenteOctubre.map((o) => (
-                  <MarketplaceProductCard key={o.title} image={o.img} tag="Hasta 10% de descuento" title={o.title} meta={o.sub} description={o.description} price={o.price} duration={o.duration} />
-                ))}
-              </div>
-            </div>
-            <div>
-              <h3 className="sec-title">Descubre Marruecos</h3>
-              <div className="duo-inner">
-                <MarketplaceProductCard image={IMG.roma} tag="MARRAKECH" title="Medina, palacios y zocos" meta="Visita guiada en español" description="Recorre los patios de la medina, descubre palacios históricos y encuentra los mejores rincones de los zocos con un guía local." price="29€" duration="3 horas" />
-                <aside className="flight-list">
-                  <h5>Experiencias populares</h5>
-                  {vuelosFinde.map((f) => (
-                    <div key={f.city} className="flight-row">
-                      <span className="flight-row-destination"><b>{f.city}</b><small>Experiencia local</small><small>{f.duration}</small></span>
-                      <span className="flight-price">desde <b>{f.price}</b></span>
-                    </div>
-                  ))}
-                </aside>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ===== VUELO PRECIO ÚNICO / CIRCUITOS / CRUCEROS ===== */}
-        <section className="section marketplace-section">
-          <div className="wrap marketplace-trio">
-            <div className="marketplace-airfare-column">
-              <h3 className="sec-title">Traslados en Marrakech</h3>
-              <div className="marketplace-airfare-layout">
-                <MarketplaceProductCard image={IMG.washington} title="Aeropuerto Marrakech-Menara" meta="Traslado privado · hasta 4 pasajeros" description="Tu chófer te espera en llegadas y te lleva directamente a tu alojamiento. Reserva con antelación y empieza el viaje sin preocupaciones." price="20€" duration="Disponible 24/7" />
-                <aside className="flight-list marketplace-route-list">
-                  <h5>Excursiones desde Marrakech</h5>
-                  {vuelosDirectos.map((flight) => (
-                    <div key={flight.city} className="flight-row">
-                      <span className="flight-row-destination"><b>{flight.city}</b><small>{flight.duration}</small></span>
-                      <span className="flight-price">desde <b>{flight.price}</b></span>
-                    </div>
-                  ))}
-                </aside>
-              </div>
-            </div>
-            <div>
-              <h3 className="sec-title">Tours privados</h3>
-              <MarketplaceProductCard image={IMG.suiza} title="Pueblos del Alto Atlas" meta="Vehículo privado · recogida incluida" description="Diseña la ruta a tu ritmo, visita pueblos bereberes y disfruta de paradas a medida con un chófer local." price="120€" duration="8 horas" />
-            </div>
-            <div>
-              <h3 className="sec-title">Cena espectáculo</h3>
-              <MarketplaceProductCard image={IMG.crucero} tag="CENA Y MÚSICA" title="Cena marroquí bajo las estrellas" meta="Menú tradicional · música en directo" description="Disfruta de una cena marroquí y música en directo bajo el cielo de Agafay. Una velada para compartir los sabores y la hospitalidad local." price="35€" duration="19:00-23:00" actionLabel="VER MÁS" />
             </div>
           </div>
         </section>
@@ -445,7 +382,7 @@ export default function LandingPage() {
           <div className="wrap">
             <div className="finance-note-panel">
               <h3 className="finance-note-heading">Descubre Marruecos con Nomadica Sahara</h3>
-              <p>Excursiones, alojamientos y traslados seleccionados para que disfrutes cada etapa del viaje.</p>
+              <p>Excursiones, circuitos y traslados seleccionados para que disfrutes cada etapa del viaje.</p>
               <p>Consulta la disponibilidad y las condiciones de cada experiencia antes de reservar. Nuestro equipo está aquí para ayudarte a preparar tu ruta.</p>
             </div>
           </div>
@@ -474,13 +411,14 @@ export default function LandingPage() {
         {/* ===== NEWSLETTER ===== */}
         <section className="newsletter">
           <div className="wrap news-in">
-            <h4>¡IDEAS Y NOVEDADES PARA TU PRÓXIMO VIAJE A MARRUECOS!</h4>
+            <h4>PROMOCIONES EXCLUSIVAS, DESCUENTOS Y NOVEDADES EN NUESTRA NEWSLETTER</h4>
             <div className="news-form">
-              <input placeholder="Tu correo electrónico" />
+              <input type="email" aria-label="Email" placeholder="Email" />
               <button className="btn-buscar">SUSCRIBIRME</button>
             </div>
             <label className="news-check">
-              <input type="checkbox" /> He leído y acepto la política de privacidad
+              <input type="checkbox" />
+              <span>He leído y acepto la <Link href={{pathname: "/privacy"}}>política de privacidad</Link> y la suscripción a la newsletter.*</span>
             </label>
           </div>
         </section>
@@ -513,22 +451,12 @@ const css = `
   .nav a:hover { color:#005F36; }
 
   /* Hero */
-  .hero { position:relative; height:400px; overflow:hidden; background:#edf1ef; display:grid; grid-template-columns:1fr 1fr; }
-  .hero-image { position:relative; grid-column:1; grid-row:1; min-width:0; overflow:hidden; animation:hero-image-enter .8s ease both; }
+  .hero { position:relative; height:400px; overflow:hidden; background:#edf1ef; }
+  .hero-image { position:absolute; inset:0; overflow:hidden; animation:hero-image-enter .8s ease both; }
   .hero-photo { object-fit:cover; }
   @keyframes hero-image-enter { from { opacity:.45; transform:scale(1.025); } to { opacity:1; transform:scale(1); } }
   .hero-arrow { position:absolute; z-index:2; top:50%; transform:translateY(-50%); width:58px; height:60px; background:rgba(255,255,255,.95); font-size:30px; font-weight:300; color:#123451; }
   .hero-arrow.left { left:0; } .hero-arrow.right { right:0; }
-  .hero-promo { grid-column:2; grid-row:1; display:flex; flex-direction:column; justify-content:space-between; min-width:0; margin:0; width:auto; background:#edf1ef; color:#092b4d; padding:32px 7%; }
-  .hero-promo-head { position:relative; display:flex; flex:1; flex-direction:column; justify-content:center; text-align:center; }
-  .hero-promo-head small { color:#183b5a; font-size:11px; font-weight:600; letter-spacing:2px; }
-  .hero-brandline { display:flex; align-items:center; justify-content:center; gap:8px; margin:10px auto 0; }
-  .hero-promo-head h2 { max-width:470px; margin:0; color:#08294d; font-family:'Bodoni 72','Didot','Bodoni MT','Times New Roman',serif; font-size:54px; font-weight:400; line-height:.88; text-align:right; }
-  .hero-tagline { margin:12px 0 0; color:#163b59; font-size:13px; font-weight:500; letter-spacing:3px; }
-  .hero-badges { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:3px; }
-  .hero-badge { display:flex; min-height:125px; flex-direction:column; align-items:center; justify-content:center; background:#59b900; padding:10px 5px; text-align:center; color:#fff; }
-  .hero-badge b { display:block; font-size:24px; line-height:1.05; }
-  .hero-badge span { margin-top:3px; font-size:12px; line-height:1.2; }
   .hero-subline { position:relative; display:flex; min-height:66px; height:auto; justify-content:center; align-items:center; max-width:none; margin:0; padding:0 16px 16px; border-bottom:1px solid #e5e7eb; background:#fff; color:#092b4d; font-size:14px; font-weight:500; letter-spacing:2px; text-align:center; }
   .hero-subline > span:first-child { max-width:calc(100% - 120px); padding:0 48px; background:#fff; clip-path:polygon(0 0,100% 0,90% 100%,10% 100%); }
   .dots { position:absolute; right:16px; top:calc(50% - 8px); transform:translateY(-50%); white-space:nowrap; }
@@ -579,6 +507,31 @@ const css = `
   .journey-title { max-width:100%; color:#fff; font-size:20px; font-weight:700; line-height:1.2; text-shadow:0 1px 5px rgba(0,0,0,.4); }
   .journey-action { display:inline-flex; min-width:132px; min-height:40px; align-items:center; justify-content:center; gap:9px; border:1px solid rgba(255,255,255,.95); background:rgba(20,20,20,.18); color:#fff; font-size:13px; font-weight:600; }
   .journey-action span { font-size:19px; font-weight:400; line-height:1; }
+
+  /* Curated activity sections */
+  .home-activity-section { padding:28px 0 34px; background:#fff; }
+  .home-activity-section-alt { background:#f0f0f0; }
+  .home-activity-heading { margin:0 0 18px; padding-bottom:7px; border-bottom:1px solid #8f9691; color:#34434c; font-size:22px; font-weight:500; }
+  .home-activity-grid { display:grid; grid-template-columns:repeat(auto-fill,270px); align-items:stretch; gap:16px; }
+  .home-activity-rail { position:relative; }
+  .home-activity-carousel { display:flex; overflow-x:auto; scroll-behavior:smooth; scroll-snap-type:x mandatory; scrollbar-width:none; }
+  .home-activity-carousel::-webkit-scrollbar { display:none; }
+  .home-activity-carousel .home-activity-item { flex:0 0 270px; scroll-snap-align:start; }
+  .home-activity-item { width:270px; min-width:270px; }
+  .home-activity-carousel-controls { position:absolute; z-index:2; top:50%; right:-34px; left:-34px; display:flex; justify-content:space-between; transform:translateY(-50%); pointer-events:none; }
+  .home-activity-carousel-controls button { display:grid; width:44px; height:56px; place-items:center; border:0; background:transparent; color:#15455f; pointer-events:auto; }
+  .home-activity-carousel-controls button:hover { color:#59ad00; }
+  .home-activity-carousel-controls svg { width:34px; height:34px; stroke-width:1.5; }
+  .home-activity-groups { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:28px; }
+  .home-transfer-list { max-width:760px; border:1px solid #c6ccca; background:#fff; padding:0 16px; }
+  .home-transfer-row { display:grid; grid-template-columns:minmax(0,1fr) auto 24px; align-items:center; gap:16px; border-bottom:1px solid #e5e8e5; padding:16px 2px; color:#303b3d; }
+  .home-transfer-row:last-child { border-bottom:0; }
+  .home-transfer-description { display:flex; min-width:0; flex-direction:column; gap:4px; }
+  .home-transfer-description b { font-size:14px; }
+  .home-transfer-description small,.home-transfer-price small { color:#758078; font-size:11px; }
+  .home-transfer-price { display:flex; flex-direction:column; text-align:right; }
+  .home-transfer-price b { color:#59ad00; font-size:21px; }
+  .home-transfer-arrow { color:#59ad00; font-size:24px; text-align:right; }
 
   /* Offer cards */
   .last-minute-section { background:#f0f0f0; padding:30px 0 34px; }
@@ -713,11 +666,16 @@ const css = `
   .flight-price b { color:#005F36; font-size:14px; }
 
   /* Newsletter */
-  .newsletter { background:#F2F9EE; padding:34px 0; text-align:center; }
-  .news-in h4 { font-size:16px; color:#005F36; margin-bottom:16px; }
+  .newsletter { background:#f2f9e9; padding:29px 0 32px; text-align:center; }
+  .news-in { max-width:1000px; }
+  .news-in h4 { margin-bottom:29px; color:#263b4d; font-size:20px; font-weight:500; line-height:1.35; }
   .news-form { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
-  .news-form input { width:320px; max-width:90%; padding:12px; border:1px solid #cfe3c4; font-size:13px; }
-  .news-check { display:block; margin-top:12px; font-size:12px; color:#666; }
+  .news-form input { width:360px; max-width:100%; min-height:40px; border:1px solid #c9ceca; background:#fff; padding:9px 13px; color:#303b42; font-size:13px; }
+  .news-form .btn-buscar { min-width:126px; min-height:40px; background:#59b900; padding:8px 17px; color:#fff; font-size:12px; font-weight:700; }
+  .news-form .btn-buscar:hover { background:#4d9f00; }
+  .news-check { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:15px; color:#39464d; font-size:13px; }
+  .news-check input { width:23px; height:23px; flex:none; accent-color:#59b900; }
+  .news-check a { text-decoration:underline; text-underline-offset:2px; }
 
   @media (max-width:1000px) {
     .grid-6 { grid-template-columns:repeat(3,1fr); }
@@ -731,11 +689,6 @@ const css = `
     .marketplace-trio .marketplace-airfare-column { grid-column:1 / -1; }
     .marketplace-airfare-layout { gap:18px; }
     .hero { height:360px; }
-    .hero-promo { padding:24px 5%; }
-    .hero-promo-head h2 { font-size:42px; }
-    .hero-badge { min-height:104px; }
-    .hero-badge b { font-size:18px; }
-    .hero-badge span { font-size:10px; }
     .marketplace-product-body h4 { font-size:17px; }
     .marketplace-product-meta { font-size:12px; }
     .marketplace-product-description { font-size:12px; }
@@ -745,6 +698,17 @@ const css = `
   @media (max-width:600px) {
     .grid-6, .grid-4, .grid-3 { grid-template-columns:1fr; }
     .journey-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .home-activity-groups { grid-template-columns:1fr; }
+    .home-activity-carousel-controls { right:-10px; left:-10px; }
+    .home-activity-section { padding:22px 0 26px; }
+    .home-activity-heading { font-size:20px; margin-bottom:14px; }
+    .home-transfer-list { padding:0 10px; }
+    .home-transfer-row { grid-template-columns:minmax(0,1fr) auto 16px; gap:8px; padding:14px 2px; }
+    .home-transfer-price b { font-size:18px; }
+    .newsletter { padding:25px 0 28px; }
+    .news-in h4 { margin-bottom:20px; font-size:17px; }
+    .news-form { align-items:stretch; }
+    .news-form input { width:min(100%,360px); }
     .journey-heading { font-size:20px; margin-bottom:14px; }
     .journey-content { gap:14px; padding:10px; }
     .journey-title { font-size:15px; }
@@ -782,19 +746,8 @@ const css = `
     .finance-note-panel { padding:10px 4px 12px; }
     .finance-note-heading { gap:8px; font-size:13px; }
     .finance-note-panel p { font-size:9px; }
-    .hero { height:440px; grid-template-columns:1fr; grid-template-rows:210px 230px; }
-    .hero-image { grid-column:1; grid-row:1; }
-    .hero-promo { grid-column:1; grid-row:2; padding:16px 14px; }
-    .hero-promo-head { justify-content:flex-start; }
-    .hero-promo-head small { font-size:9px; }
-    .hero-brandline { margin-top:7px; }
-    .hero-promo-head h2 { max-width:270px; font-size:35px; text-align:center; }
-    .hero-tagline { margin-top:6px; font-size:9px; letter-spacing:2px; }
-    .hero-badges { gap:3px; }
-    .hero-badge { min-height:68px; padding:6px 3px; }
-    .hero-badge b { font-size:14px; }
-    .hero-badge span { font-size:9px; }
-    .hero-arrow { top:105px; width:42px; height:48px; font-size:24px; }
+    .hero { height:240px; }
+    .hero-arrow { width:42px; height:48px; font-size:24px; }
     .hero-subline { min-height:62px; font-size:10px; letter-spacing:1px; }
     .hero-subline > span:first-child { max-width:calc(100% - 86px); padding:0 15px; }
     .dots { right:8px; }

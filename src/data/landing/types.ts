@@ -17,7 +17,6 @@ export type Tile = {
     | "car"
     | "chat"
     | "guide"
-    | "hotel"
     | "lotus"
     | "shield"
     | "tag"

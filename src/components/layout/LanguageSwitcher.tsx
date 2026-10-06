@@ -1,19 +1,23 @@
 "use client";
 
 import {useLocale, useTranslations} from "next-intl";
+import {useParams} from "next/navigation";
 
 import {Link, usePathname} from "@/i18n/navigation";
 import {routing, type Locale} from "@/i18n/routing";
+import {hrefForLocaleSwitch} from "@/lib/hrefs";
 
 /**
  * Switches locale while keeping the current pathname, so
- * /es/excursiones-marruecos → /en/excursiones-marruecos.
+ * Preserve the current canonical page and translate localized category, city,
+ * and offer slugs when switching languages.
  */
 export default function LanguageSwitcher({className = ""}: {className?: string}) {
   const t = useTranslations("languages");
   const common = useTranslations("common");
   const activeLocale = useLocale();
   const pathname = usePathname();
+  const routeParams = useParams<Record<string, string | string[]>>();
 
   return (
     <div
@@ -23,7 +27,7 @@ export default function LanguageSwitcher({className = ""}: {className?: string})
       {routing.locales.map((locale) => (
         <Link
           key={locale}
-          href={pathname}
+          href={hrefForLocaleSwitch(pathname, routeParams, activeLocale as Locale, locale)}
           locale={locale as Locale}
           hrefLang={locale}
           aria-current={locale === activeLocale ? "true" : undefined}

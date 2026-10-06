@@ -5,6 +5,7 @@ import { ArrowLeft, Eye, EyeOff, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {Link} from "@/i18n/navigation";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { loginStep1Schema, loginStep2Schema } from "@/lib/validations/partner";
 import { verifyCode, verifyCredentials, type AuthState } from "./actions";
@@ -148,12 +149,12 @@ export default function LoginForm() {
               <Label htmlFor="password" className="text-xs font-medium text-[#222]">
                 Contraseña
               </Label>
-              <a
-                href="#"
+              <Link
+                href="/help"
                 className="text-xs font-medium text-[#66B600] underline-offset-2 hover:underline"
               >
                 ¿Olvidaste tu contraseña?
-              </a>
+              </Link>
             </div>
             <div className="relative">
               <Input
