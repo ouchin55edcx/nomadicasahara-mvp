@@ -1,4 +1,3 @@
-import { getCurrentUser } from "@/lib/auth";
 import { getCategories } from "@/app/actions/categories";
 import { getTreks } from "@/app/actions/treks";
 import CategoryManagement from "./CategoryManagement";
@@ -10,10 +9,7 @@ export const metadata: Metadata = {
     "Organize and manage experience categories to help travelers find their perfect trek.",
 };
 
-export default async function AdminCategoryPage() {
-  const admin = await getCurrentUser();
-
-
+export default async function PartnerCategoryPage() {
   const categories = await getCategories();
   const tours = await getTreks();
 

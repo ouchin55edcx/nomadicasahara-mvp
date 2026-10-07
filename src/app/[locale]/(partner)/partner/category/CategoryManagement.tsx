@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
+import {useRouter} from "next/navigation";
 import {
   Category,
   createCategory,
   updateCategory,
   deleteCategory,
-  uploadCategoryImage,
 } from "@/app/actions/categories";
 import {
   Plus,
@@ -35,8 +35,10 @@ export default function CategoryManagement({ initialCategories, tours }: Categor
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [photoUrl, setPhotoUrl] = useState("");
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [removePhoto, setRemovePhoto] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const router = useRouter();
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   const filteredCategories = initialCategories.filter(
@@ -55,35 +57,40 @@ export default function CategoryManagement({ initialCategories, tours }: Categor
 
   useEffect(() => {
     setPhotoUrl(editingCategory?.photo || "");
+    setImageFile(null);
+    setRemovePhoto(false);
     setPhotoError(null);
   }, [editingCategory, isModalOpen]);
 
-  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    e.currentTarget.value = "";
     if (!file) return;
-    setUploadingPhoto(true);
-    setPhotoError(null);
-    const fd = new FormData();
-    fd.append("file", file);
-    const result = await uploadCategoryImage(fd);
-    setUploadingPhoto(false);
-    if ("error" in result) {
-      setPhotoError(result.error);
-    } else {
-      setPhotoUrl(result.url);
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError("Image must be 5 MB or smaller.");
+      return;
     }
+    setPhotoError(null);
+    setImageFile(file);
+    setPhotoUrl(URL.createObjectURL(file));
+    setRemovePhoto(false);
   }
 
   async function handleSubmit(formData: FormData) {
     setMessage(null);
-    formData.set("photo", photoUrl);
+    if (!imageFile && (!editingCategory || removePhoto)) {
+      setPhotoError("Choose one category image before saving.");
+      return;
+    }
+    const payload = new FormData();
+    payload.set("name", String(formData.get("name") || ""));
+    payload.set("description", String(formData.get("description") || ""));
+    payload.set("removeImage", String(removePhoto));
+    if (imageFile) payload.set("image", imageFile);
     startTransition(async () => {
-      let result;
-      if (editingCategory) {
-        result = await updateCategory(editingCategory.id, formData);
-      } else {
-        result = await createCategory(formData);
-      }
+      const result = editingCategory
+        ? await updateCategory(editingCategory.id, payload)
+        : await createCategory(payload);
 
       if (result.error) {
         setMessage({ type: "error", text: result.error });
@@ -95,7 +102,10 @@ export default function CategoryManagement({ initialCategories, tours }: Categor
         setIsModalOpen(false);
         setEditingCategory(null);
         setPhotoUrl("");
+        setImageFile(null);
+        setRemovePhoto(false);
         setPhotoError(null);
+        router.refresh();
       }
     });
   }
@@ -107,6 +117,8 @@ export default function CategoryManagement({ initialCategories, tours }: Categor
       const result = await deleteCategory(id);
       if (result.error) {
         alert(result.error);
+      } else {
+        router.refresh();
       }
     });
   }
@@ -240,7 +252,7 @@ export default function CategoryManagement({ initialCategories, tours }: Categor
       {/* Modal */}
       {isModalOpen && (
         <div className="animate-in fade-in fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm duration-200">
-          <div className="animate-in zoom-in-95 w-full max-w-lg overflow-hidden rounded-[2.5rem] bg-white shadow-2xl duration-200">
+          <div className="animate-in zoom-in-95 max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[2.5rem] bg-white shadow-2xl duration-200">
             <div className="flex items-center justify-between border-b border-gray-100 px-8 py-6">
               <h2 className="text-2xl font-black text-gray-900">
                 {editingCategory ? "Edit Category" : "New Category"}
@@ -256,7 +268,73 @@ export default function CategoryManagement({ initialCategories, tours }: Categor
               </button>
             </div>
 
-            <form action={handleSubmit} className="space-y-6 p-8">
+            <form action={handleSubmit} className="grid grid-cols-1 items-start gap-6 p-6 sm:p-8 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">Category Photo</label>
+
+                <label
+                  className={`relative flex h-56 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all ${
+                    photoUrl
+                      ? "border-[#67B500]"
+                      : "border-gray-200 hover:border-[#67B500] hover:bg-[#f7fdf9]"
+                  }`}
+                >
+                  {isPending && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-white/90">
+                      <Loader2 className="h-6 w-6 animate-spin text-gray-900" />
+                      <p className="text-sm font-semibold text-gray-900">Saving to Neon…</p>
+                    </div>
+                  )}
+
+                  {photoUrl && !isPending && (
+                    <>
+                      <img src={photoUrl} alt="Preview" className="h-full w-full object-cover" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all hover:bg-black/30 hover:opacity-100">
+                        <span className="rounded-full bg-black/50 px-4 py-2 text-sm font-semibold text-white">
+                          Change photo
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setPhotoUrl("");
+                          setImageFile(null);
+                          setRemovePhoto(Boolean(editingCategory));
+                        }}
+                        className="absolute top-2 right-2 z-10 rounded-full bg-white p-1.5 shadow-lg transition-colors hover:bg-red-50"
+                      >
+                        <X className="h-4 w-4 text-gray-500" />
+                      </button>
+                    </>
+                  )}
+
+                  {!photoUrl && !isPending && (
+                    <div className="flex flex-col items-center gap-2 p-6 text-center">
+                      <UploadCloud className="h-8 w-8 text-gray-300" />
+                      <p className="text-sm font-semibold text-gray-500">Click to upload a photo</p>
+                      <p className="text-xs text-gray-400">JPG, PNG or WebP · Max 5 MB</p>
+                      <span className="pointer-events-none mt-1 rounded-full bg-[#67B500] px-4 py-2 text-xs font-bold text-white">
+                        Browse file
+                      </span>
+                    </div>
+                  )}
+
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handlePhotoUpload}
+                  />
+                </label>
+
+                {photoError && (
+                  <p className="flex items-center gap-1.5 text-xs font-medium text-red-500">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {photoError}
+                  </p>
+                )}
+              </div>
+
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-bold text-gray-700">Category Name</label>
@@ -269,88 +347,21 @@ export default function CategoryManagement({ initialCategories, tours }: Categor
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Category Photo</label>
-
-                  <label
-                    className={`relative flex h-44 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all ${
-                      photoUrl
-                        ? "border-[#67B500]"
-                        : "border-gray-200 hover:border-[#67B500] hover:bg-[#f7fdf9]"
-                    }`}
-                  >
-                    {uploadingPhoto && (
-                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-white/90">
-                        <Loader2 className="h-6 w-6 animate-spin text-gray-900" />
-                        <p className="text-sm font-semibold text-gray-900">
-                          Uploading to Cloudflare...
-                        </p>
-                      </div>
-                    )}
-
-                    {photoUrl && !uploadingPhoto && (
-                      <>
-                        <img src={photoUrl} alt="Preview" className="h-full w-full object-cover" />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all hover:bg-black/30 hover:opacity-100">
-                          <span className="rounded-full bg-black/50 px-4 py-2 text-sm font-semibold text-white">
-                            Change photo
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setPhotoUrl("");
-                          }}
-                          className="absolute top-2 right-2 z-10 rounded-full bg-white p-1.5 shadow-lg transition-colors hover:bg-red-50"
-                        >
-                          <X className="h-4 w-4 text-gray-500" />
-                        </button>
-                      </>
-                    )}
-
-                    {!photoUrl && !uploadingPhoto && (
-                      <div className="flex flex-col items-center gap-2 p-6 text-center">
-                        <UploadCloud className="h-8 w-8 text-gray-300" />
-                        <p className="text-sm font-semibold text-gray-500">
-                          Click to upload a photo
-                        </p>
-                        <p className="text-xs text-gray-400">JPG, PNG or WebP · Max 10 MB</p>
-                        <span className="pointer-events-none mt-1 rounded-full bg-[#67B500] px-4 py-2 text-xs font-bold text-white">
-                          Browse file
-                        </span>
-                      </div>
-                    )}
-
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      className="hidden"
-                      onChange={handlePhotoUpload}
-                    />
-                  </label>
-
-                  {photoError && (
-                    <p className="flex items-center gap-1.5 text-xs font-medium text-red-500">
-                      <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {photoError}
-                    </p>
-                  )}
-                </div>
-                <div>
                   <label className="text-sm font-bold text-gray-700">Description</label>
                   <textarea
                     name="description"
                     defaultValue={editingCategory?.description || ""}
-                    rows={4}
+                    rows={6}
                     placeholder="What makes this category special?"
                     className="mt-2 w-full resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-black transition-all placeholder:text-gray-700 focus:bg-white focus:ring-4 focus:ring-[#67B500]/5 focus:outline-none"
                   />
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="col-span-full flex gap-3 border-t border-gray-100 pt-5">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => { setIsModalOpen(false); setEditingCategory(null); }}
                   className="transition-active flex-1 rounded-full border border-gray-200 py-3.5 text-sm font-bold text-gray-600 active:scale-95"
                 >
                   Cancel
