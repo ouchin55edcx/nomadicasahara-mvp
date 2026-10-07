@@ -65,6 +65,18 @@
     "passengers": "pasajeros"
   },
   "footer": {
+    "redesign": {
+      "customerCare": "Atención al cliente",
+      "business": "Empresas",
+      "legal": "Información legal",
+      "ourBrands": "Nuestras marcas",
+      "newsletter": "Newsletter",
+      "newsletterCopy": "Recibe ideas de viaje y novedades de Marruecos.",
+      "email": "Correo electrónico",
+      "subscribe": "Suscribirme",
+      "contact": "Contacta con nosotros",
+      "paymentMethods": "Métodos de pago aceptados"
+    },
     "tagline": "Viajes de autor por Marruecos desde 2012. Desierto, medinas y Atlántico con guías locales oficiales.",
     "companyHeading": "Sobre nosotros",
     "company": {
@@ -117,7 +129,7 @@
     },
     "partnerLogin": {
       "title": "Acceso socios",
-      "description": "Entra en el portal de socios de Nomadica Sahara."
+      "description": "Entra en el portal de socios de Toledano Viajes."
     },
     "partnerPortal": {
       "titleTemplate": "%s | Portal de socios"
@@ -185,7 +197,35 @@
     "breadcrumb": "Ruta de navegación",
     "facts": "Datos del viaje",
     "howItWorks": "Cómo funciona",
-    "viewTrip": "Ver viaje"
+    "viewTrip": "Ver viaje",
+    "leadFallback": "Qué esperar de este viaje",
+    "departureDate": "Fecha de salida",
+    "chooseDate": "Elegir fecha",
+    "offerField": "Oferta",
+    "compareOffers": "Comparar ofertas",
+    "onRequest": "A consultar",
+    "placesVisited": "Lugares que visitarás",
+    "nightOf": "Noche {number}",
+    "daysRange": "Días {start}–{end}",
+    "mealBreakfast": "Desayuno",
+    "mealLunch": "Almuerzo",
+    "mealDinner": "Cena",
+    "standardAndPremium": "Estándar y Premium",
+    "priceLabel": "Desde",
+    "durationTrip": "Duración del viaje",
+    "viewMapBudget": "Ver itinerario y presupuesto",
+    "departsFromShort": "Salida desde {place}",
+    "quotePriceNote": "Las fechas y los detalles se confirman bajo petición.",
+    "selectDate": "Elige una fecha",
+    "stepNumber": "Paso {number}",
+    "includesLabel": "Incluye:",
+    "stayDescription": "Opciones de alojamiento incluidas en este itinerario.",
+    "hotelsProvided": "Alojamientos previstos (o similares)",
+    "staysHelper": "Los alojamientos mostrados están sujetos a confirmación para las fechas seleccionadas.",
+    "importantInformation": "Información importante",
+    "vehicleOptions": "Opciones de vehículo",
+    "vehicle": "vehículo",
+    "pickupNote": "Los detalles de recogida se confirman con tu solicitud de reserva."
   },
   "TourOffers": {
     "eyebrow": "Elige tu oferta",
@@ -241,7 +281,10 @@
     "sharedGroup": "Grupo compartido",
     "people": "personas",
     "standardVehicle": "Vehículo estándar",
-    "premiumVehicle": "Vehículo premium"
+    "premiumVehicle": "Vehículo premium",
+    "totalPrice": "Precio total",
+    "select": "Seleccionar",
+    "selected": "Seleccionado"
   },
   "Booking": {
     "stepTrip": "Viaje",

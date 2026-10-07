@@ -69,7 +69,7 @@ export default function BookingList({
         action={
           <Link
             href={emptyHref}
-            className="mt-2 inline-flex items-center rounded-sm border border-[#E5E5E5] px-4 py-2 text-sm font-semibold uppercase text-[#222] transition-colors duration-150 hover:bg-[#F7F7F7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600]"
+            className="mt-2 inline-flex items-center rounded-sm border border-[#E5E5E5] px-4 py-2 text-sm font-semibold uppercase text-[#222] transition-colors duration-150 hover:bg-[#F7F7F7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B500]"
           >
             Limpiar filtros
           </Link>

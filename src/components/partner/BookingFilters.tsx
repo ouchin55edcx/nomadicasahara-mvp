@@ -94,9 +94,9 @@ export default function BookingFilters({
               aria-selected={selected}
               onClick={() => setParam("status", tab.value === "all" ? null : tab.value)}
               className={cn(
-                "flex h-9 shrink-0 items-center gap-2 rounded-sm px-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600]",
+                "flex h-9 shrink-0 items-center gap-2 rounded-sm px-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B500]",
                 selected
-                  ? "bg-[#EAF6D6] font-semibold text-[#3D7A00]"
+                  ? "bg-[#EAF6D6] font-semibold text-gray-900"
                   : "text-[#666] hover:bg-[#F7F7F7] hover:text-[#222]",
               )}
             >
@@ -104,7 +104,7 @@ export default function BookingFilters({
               <span
                 className={cn(
                   "rounded-sm px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
-                  selected ? "bg-[#66B600] text-white" : "bg-[#F0F0F0] text-[#666]",
+                  selected ? "bg-[#67B500] text-white" : "bg-[#F0F0F0] text-[#666]",
                 )}
               >
                 {count}

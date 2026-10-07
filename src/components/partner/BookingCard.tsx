@@ -60,7 +60,7 @@ export default function BookingCard({
           {/* Imagen del producto */}
           <Link
             href={detailHref}
-            className="shrink-0 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600] focus-visible:ring-offset-2"
+            className="shrink-0 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B500] focus-visible:ring-offset-2"
             aria-label={`Ver detalle de ${booking.productTitle}`}
           >
             <Image
@@ -77,7 +77,7 @@ export default function BookingCard({
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <Link
                 href={detailHref}
-                className="min-w-0 font-semibold text-[#1A1A1A] underline-offset-4 transition-colors duration-150 hover:text-[#66B600] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600]"
+                className="min-w-0 font-semibold text-[#1A1A1A] underline-offset-4 transition-colors duration-150 hover:text-[#67B500] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B500]"
               >
                 <span className="line-clamp-2">{booking.productTitle}</span>
               </Link>
@@ -86,7 +86,7 @@ export default function BookingCard({
 
             <Link
               href={detailHref}
-              className="w-fit font-mono text-sm font-semibold text-[#66B600] underline-offset-4 transition-colors duration-150 hover:text-[#559A00] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600]"
+              className="w-fit font-mono text-sm font-semibold text-gray-900 underline-offset-4 transition-colors duration-150 hover:text-[#559A00] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B500]"
             >
               #{booking.id}
             </Link>
@@ -150,12 +150,12 @@ export default function BookingCard({
               <ul className="flex flex-col gap-1.5">
                 {booking.travelers.map((t, i) => (
                   <li key={`${t.name}-${i}`} className="flex items-center gap-2 text-sm">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#EAF6D6] text-[10px] font-bold text-[#3D7A00]">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#EAF6D6] text-[10px] font-bold text-gray-900">
                       {i + 1}
                     </span>
                     <span className="truncate text-[#222]">{t.name}</span>
                     {i === 0 && (
-                      <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-[#66B600]">
+                      <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wide text-gray-900">
                         Titular
                       </span>
                     )}
@@ -249,7 +249,7 @@ export default function BookingCard({
                 </div>
                 <div className="flex items-center justify-between gap-3 border-t border-[#E5E5E5] pt-1.5">
                   <dt className="font-semibold text-[#1A1A1A]">Importe neto</dt>
-                  <dd className="text-base font-bold text-[#66B600]">
+                  <dd className="text-base font-bold text-gray-900">
                     {formatMoney(booking.payment.net)}
                   </dd>
                 </div>

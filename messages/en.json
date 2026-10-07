@@ -65,6 +65,18 @@
     "passengers": "passengers"
   },
   "footer": {
+    "redesign": {
+      "customerCare": "Customer care",
+      "business": "Business",
+      "legal": "Legal information",
+      "ourBrands": "Our brands",
+      "newsletter": "Newsletter",
+      "newsletterCopy": "Get travel ideas and news from Morocco.",
+      "email": "Email address",
+      "subscribe": "Subscribe",
+      "contact": "Contact us",
+      "paymentMethods": "Accepted payment methods"
+    },
     "tagline": "Curated journeys across Morocco since 2012. Desert, medinas and the Atlantic with certified local guides.",
     "companyHeading": "About us",
     "company": {
@@ -117,7 +129,7 @@
     },
     "partnerLogin": {
       "title": "Partner sign in",
-      "description": "Sign in to the Nomadica Sahara partner portal."
+      "description": "Sign in to the Toledano Viajes partner portal."
     },
     "partnerPortal": {
       "titleTemplate": "%s | Partner portal"
@@ -185,7 +197,35 @@
     "breadcrumb": "Breadcrumb",
     "facts": "Tour facts",
     "howItWorks": "How it works",
-    "viewTrip": "View trip"
+    "viewTrip": "View trip",
+    "leadFallback": "What to expect on this trip",
+    "departureDate": "Departure date",
+    "chooseDate": "Choose date",
+    "offerField": "Offer",
+    "compareOffers": "Compare offers",
+    "onRequest": "On request",
+    "placesVisited": "Places you will visit",
+    "nightOf": "Night {number}",
+    "daysRange": "Days {start}–{end}",
+    "mealBreakfast": "Breakfast",
+    "mealLunch": "Lunch",
+    "mealDinner": "Dinner",
+    "standardAndPremium": "Standard and Premium",
+    "priceLabel": "From",
+    "durationTrip": "Trip duration",
+    "viewMapBudget": "View itinerary and price",
+    "departsFromShort": "Departs from {place}",
+    "quotePriceNote": "Dates and arrangements are confirmed on request.",
+    "selectDate": "Select a date",
+    "stepNumber": "Step {number}",
+    "includesLabel": "Includes:",
+    "stayDescription": "Accommodation options included with this itinerary.",
+    "hotelsProvided": "Planned stays (or similar)",
+    "staysHelper": "Accommodation details shown are subject to confirmation for your selected dates.",
+    "importantInformation": "Important information",
+    "vehicleOptions": "Vehicle options",
+    "vehicle": "vehicle",
+    "pickupNote": "Pickup details are confirmed with your booking request."
   },
   "TourOffers": {
     "eyebrow": "Choose your offer",
@@ -241,7 +281,10 @@
     "sharedGroup": "Shared group",
     "people": "people",
     "standardVehicle": "Standard vehicle",
-    "premiumVehicle": "Premium vehicle"
+    "premiumVehicle": "Premium vehicle",
+    "totalPrice": "Total price",
+    "select": "Select",
+    "selected": "Selected"
   },
   "Booking": {
     "stepTrip": "Trip",

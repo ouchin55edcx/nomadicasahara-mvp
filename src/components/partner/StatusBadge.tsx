@@ -3,14 +3,14 @@ import type { BookingStatus, PaymentStatus, ProductStatus, PayoutStatus } from "
 
 const COLORS: Record<string, string> = {
   Pendiente: "bg-[#F0A500] text-white",
-  Confirmada: "bg-[#66B600] text-white",
+  Confirmada: "bg-[#67B500] text-white",
   Completada: "bg-[#2B7A78] text-white",
   Cancelada: "bg-[#D93025] text-white",
   "Cancelación solicitada": "bg-[#B87900] text-white",
-  Activo: "bg-[#66B600] text-white",
+  Activo: "bg-[#67B500] text-white",
   Borrador: "bg-[#8A8A8A] text-white",
   Pausado: "bg-[#F0A500] text-white",
-  Pagado: "bg-[#66B600] text-white",
+  Pagado: "bg-[#67B500] text-white",
   Reembolsado: "bg-[#D93025] text-white",
   Procesando: "bg-[#2B7A78] text-white",
 };

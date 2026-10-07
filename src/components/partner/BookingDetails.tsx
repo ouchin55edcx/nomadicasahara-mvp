@@ -32,8 +32,8 @@ import type { Booking, BookingStatus, TimelineTone } from "@/data/partner-mock";
 import {Link} from "@/i18n/navigation";
 
 const TONE_STYLES: Record<TimelineTone, { dot: string; text: string }> = {
-  default: { dot: "bg-[#66B600]", text: "text-[#3D7A00]" },
-  success: { dot: "bg-[#66B600]", text: "text-[#3D7A00]" },
+  default: { dot: "bg-[#67B500]", text: "text-gray-900" },
+  success: { dot: "bg-[#67B500]", text: "text-gray-900" },
   danger: { dot: "bg-[#D93025]", text: "text-[#D93025]" },
   muted: { dot: "bg-[#F0A500]", text: "text-[#B87900]" },
 };
@@ -66,7 +66,7 @@ export default function BookingDetails({ booking }: { booking: Booking }) {
       <div className="flex flex-col gap-3">
         <Link
           href="/partner/dashboard/bookings"
-          className="inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-medium text-[#666] transition-colors duration-150 hover:text-[#222] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600]"
+          className="inline-flex w-fit items-center gap-1.5 rounded-sm text-sm font-medium text-[#666] transition-colors duration-150 hover:text-[#222] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B500]"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden />
           Volver a reservas
@@ -80,7 +80,7 @@ export default function BookingDetails({ booking }: { booking: Booking }) {
               Creada el {formatBookingDate(booking.createdAt)}
             </span>
           </div>
-          <p className="text-2xl font-bold text-[#66B600]">{formatMoney(booking.total)}</p>
+          <p className="text-2xl font-bold text-gray-900">{formatMoney(booking.total)}</p>
         </div>
       </div>
 
@@ -148,7 +148,7 @@ export default function BookingDetails({ booking }: { booking: Booking }) {
                   className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EAF6D6] text-xs font-bold text-[#3D7A00]">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EAF6D6] text-xs font-bold text-gray-900">
                       {i + 1}
                     </span>
                     <div className="min-w-0">
@@ -216,7 +216,7 @@ export default function BookingDetails({ booking }: { booking: Booking }) {
               />
               <div className="flex items-center justify-between gap-3 border-t border-[#E5E5E5] pt-3">
                 <dt className="text-sm font-semibold text-[#1A1A1A]">Importe neto</dt>
-                <dd className="text-lg font-bold text-[#66B600]">
+                <dd className="text-lg font-bold text-gray-900">
                   {formatMoney(booking.payment.net)}
                 </dd>
               </div>
@@ -319,7 +319,7 @@ function Section({
     <section className="rounded-sm border border-[#E5E5E5] bg-white p-5">
       <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-[#1A1A1A]">
         <span className="flex h-7 w-7 items-center justify-center rounded-sm bg-[#EAF6D6]">
-          <Icon className="h-4 w-4 text-[#559A00]" aria-hidden />
+          <Icon className="h-4 w-4 text-gray-900" aria-hidden />
         </span>
         {title}
       </h3>

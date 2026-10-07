@@ -39,7 +39,7 @@ export default function ProfileMenu() {
         <button
           type="button"
           aria-label="Menú de usuario"
-          className="flex items-center gap-2 rounded-sm p-1 transition-colors duration-150 hover:bg-[#F7F7F7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600]"
+          className="flex items-center gap-2 rounded-sm p-1 transition-colors duration-150 hover:bg-[#F7F7F7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B500]"
         >
           <Avatar className="h-8 w-8">
             <AvatarFallback>{PARTNER.initials}</AvatarFallback>

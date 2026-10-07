@@ -80,7 +80,7 @@ export default function Breadcrumbs() {
               {crumb.href && !last ? (
                 <Link
                   href={crumb.href}
-                  className="truncate rounded-sm text-[#666] transition-colors duration-150 hover:text-[#66B600] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600]"
+                  className="truncate rounded-sm text-[#666] transition-colors duration-150 hover:text-[#67B500] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B500]"
                 >
                   {crumb.label}
                 </Link>

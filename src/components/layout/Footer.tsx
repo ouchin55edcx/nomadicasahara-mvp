@@ -59,15 +59,11 @@ export default function Footer() {
         </div>
       </nav>
 
-      <div className="site-footer-main">
-        {/* Brand */}
+      <div className="site-footer-brand-strip">
         <div className="site-footer-brand">
           <Link href="/" className="inline-flex items-center">
             <BrandLogo variant="footer" />
           </Link>
-          <p className="site-footer-tagline">
-            {t("footer.tagline")}
-          </p>
           <div className="site-footer-socials">
             {socials.map((s) => (
               <span
@@ -83,55 +79,53 @@ export default function Footer() {
             ))}
           </div>
         </div>
+        <LanguageSwitcher className="site-footer-language text-white/85" />
+      </div>
 
-        {/* Empresa */}
+      <div className="site-footer-main">
+
         <nav className="site-footer-column">
-          <h3>
-            {t("footer.companyHeading")}
-          </h3>
+          <h3>{t("footer.redesign.customerCare")}</h3>
           <ul>
-            {empresa.map((e) => (
-              <li key={e.label}>
-                <Link href={e.href}>
-                  {e.label}
-                </Link>
-              </li>
-            ))}
+            <li><Link href="/help">{t("footer.links.travelGuides")}</Link></li>
+            <li><Link href="/contact">{t("footer.redesign.contact")}</Link></li>
+            <li><Link href="/tours">{t("common.allTours")}</Link></li>
           </ul>
         </nav>
 
-        {/* Enlaces de interés */}
         <nav className="site-footer-column">
-          <h3>
-            {t("footer.linksHeading")}
-          </h3>
+          <h3>{t("footer.redesign.business")}</h3>
           <ul>
-            {enlaces.map((e) => (
-              <li key={e.label}>
-                <Link href={e.href}>
-                  {e.label}
-                </Link>
-              </li>
-            ))}
+            {empresa.map((e) => <li key={e.label}><Link href={e.href}>{e.label}</Link></li>)}
           </ul>
         </nav>
 
-        {/* Idioma */}
-        <div className="site-footer-column site-footer-international">
-          <h3>
-            {t("footer.languageHeading")}
-          </h3>
-          <LanguageSwitcher className="site-footer-language mt-3 text-white/85" />
-          <p className="site-footer-hours">
-            {t("footer.supportHours")}
-          </p>
+        <nav className="site-footer-column">
+          <h3>{t("footer.redesign.legal")}</h3>
+          <ul>{enlaces.filter((item) => item.href !== "/help").map((e) => <li key={e.label}><Link href={e.href}>{e.label}</Link></li>)}</ul>
+        </nav>
+
+        <nav className="site-footer-column">
+          <h3>{t("footer.redesign.ourBrands")}</h3>
+          <ul>{footerNavigation.slice(0, 4).map((item) => <li key={item.key}><Link href={item.href}>{t(`nav.items.${item.key}`)}</Link></li>)}</ul>
+        </nav>
+
+        <div className="site-footer-column site-footer-newsletter">
+          <h3>{t("footer.redesign.newsletter")}</h3>
+          <p>{t("footer.redesign.newsletterCopy")}</p>
+          <form action="/contact" method="get">
+            <input type="hidden" name="topic" value="newsletter" />
+            <label className="sr-only" htmlFor="footer-newsletter-email">{t("footer.redesign.email")}</label>
+            <input id="footer-newsletter-email" name="email" type="email" placeholder={t("footer.redesign.email")} required />
+            <button type="submit">{t("footer.redesign.subscribe")}</button>
+          </form>
         </div>
       </div>
 
       <div className="site-footer-bottom">
         <div className="site-footer-bottom-inner">
           <p>{t("footer.copyright")}</p>
-          <p>{t("footer.license")}</p>
+          <p className="site-footer-payments" aria-label={t("footer.redesign.paymentMethods")}><span>VISA</span><span className="site-footer-mastercard"><i/><i/></span><span>AMEX</span></p>
         </div>
       </div>
       <a className="site-footer-top" href="#" aria-label="Volver arriba">↑</a>

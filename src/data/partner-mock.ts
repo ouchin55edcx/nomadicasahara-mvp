@@ -142,7 +142,7 @@ export const PARTNER = {
   },
 } as const;
 
-export const CITIES = ["Marrakech", "Essaouira"] as const;
+export const CITIES = ["Marrakech", "Agafay", "Zagora", "Merzouga", "Saidia", "Essaouira"] as const;
 export const CATEGORIES = [
   "Cultura",
   "Desierto",
@@ -152,6 +152,8 @@ export const CATEGORIES = [
   "Costa",
   "Deportes",
   "Circuito",
+  "Hammam & Spa",
+  "Transfers",
 ] as const;
 export const LANGUAGES = ["Español", "Inglés", "Francés", "Alemán", "Árabe", "Italiano"] as const;
 export const WEEK_DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] as const;

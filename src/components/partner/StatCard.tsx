@@ -26,7 +26,7 @@ export default function StatCard({
       <div className="flex items-start justify-between gap-3">
         <p className="text-xs font-semibold uppercase tracking-wide text-[#666]">{label}</p>
         <span className="flex h-9 w-9 items-center justify-center rounded-sm bg-[#EAF6D6]">
-          <Icon className="h-[18px] w-[18px] text-[#559A00]" aria-hidden />
+          <Icon className="h-[18px] w-[18px] text-gray-900" aria-hidden />
         </span>
       </div>
 
@@ -36,7 +36,7 @@ export default function StatCard({
         <span
           className={cn(
             "inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs font-semibold",
-            positive ? "bg-[#EAF6D6] text-[#3D7A00]" : "bg-[#FDECEC] text-[#D93025]",
+            positive ? "bg-[#EAF6D6] text-gray-900" : "bg-[#FDECEC] text-[#D93025]",
           )}
         >
           <TrendIcon className="h-3.5 w-3.5" aria-hidden />

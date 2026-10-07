@@ -46,6 +46,7 @@ import EmptyState from "./EmptyState";
 import StatusBadge from "./StatusBadge";
 import { formatMoney } from "./BookingsTable";
 import { CITIES, type PartnerProduct, type ProductStatus } from "@/data/partner-mock";
+import {categories, type TourCategory} from "@/data/tour-taxonomy";
 import { Package, PackageX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {Link} from "@/i18n/navigation";
@@ -60,7 +61,20 @@ export default function ProductsTable({ products }: { products: PartnerProduct[]
   const [status, setStatus] = React.useState<StatusFilter>("all");
   const [items, setItems] = React.useState(products);
 
-  React.useEffect(() => setItems(products), [products]);
+  React.useEffect(() => {
+    let saved: Record<string, {title?: string; category?: string; destination?: string; destinationOther?: string; summary?: string; slug?: string; durationValue?: string; durationUnit?: "hours"|"days"; maxTravelers?: string; pickupType?: string; meetingAddress?: string; pickupPoints?: {name:string;address:string}[]; pricingModel?: string; prices?: Record<string,string>; childPrices?: Record<string,string>; media?: {id:string;name:string}[]; coverId?: string; status?: string}> = {};
+    try { saved = JSON.parse(localStorage.getItem("partner-product-drafts-v2") || "{}"); } catch { saved = {}; }
+    const drafts = Object.entries(saved).filter(([,item]) => Boolean(item.title || item.category)).map(([id,item]): PartnerProduct => {
+      const imageName = item.media?.find(media => media.id === item.coverId)?.name;
+      const image = imageName?.match(/\.(jpe?g|png|webp)$/i) ? "/images/tour-ciudades.jpg" : "/images/tour-ciudades.jpg";
+      const numericPrice = Number(item.prices?.standard) || 0;
+      const status: ProductStatus = item.status === "Published locally" ? "Activo" : item.status === "Hidden" ? "Pausado" : "Borrador";
+      const selectedCategory=item.category&&item.category in categories?categories[item.category as TourCategory].name.en:item.category||"Uncategorized";
+      const selectedPickup=item.pickupPoints?.map(point=>point.name||point.address).filter(Boolean).join(", ")||item.meetingAddress||"";
+      return {id,title:item.title||"Untitled product",slug:item.slug||"",city:item.destination === "Other" ? (item.destinationOther||"Marrakech") as PartnerProduct["city"] : (item.destination||"Marrakech") as PartnerProduct["city"],category:selectedCategory,price:numericPrice,childPrice:Number(item.childPrices?.standard)||0,status,bookingsCount:0,rating:0,reviewsCount:0,views:0,conversion:0,image,duration:item.durationValue?`${item.durationValue} ${item.durationUnit||"hours"}`:"",groupSize:Number(item.maxTravelers)||0,languages:["English"],pickup:selectedPickup,defaultTime:"",capacity:Number(item.maxTravelers)||0,daysOfWeek:[],cutoffTime:"",cancellationPolicy:"",shortDescription:item.summary||""};
+    });
+    setItems([...drafts,...products.filter(p=>!drafts.some(d=>d.id===p.id))]);
+  }, [products]);
 
   const filtered = items.filter((p) => {
     if (query && !p.title.toLowerCase().includes(query.toLowerCase())) return false;
@@ -72,7 +86,6 @@ export default function ProductsTable({ products }: { products: PartnerProduct[]
   function handleAction(action: string, product: PartnerProduct) {
     switch (action) {
       case "edit":
-        toast.info(`Editando «${product.title}»`, { description: "Demo: el editor no está conectado." });
         break;
       case "duplicate": {
         const copy: PartnerProduct = {
@@ -162,8 +175,8 @@ export default function ProductsTable({ products }: { products: PartnerProduct[]
             aria-label="Vista de tabla"
             aria-pressed={view === "table"}
             className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600]",
-              view === "table" ? "bg-[#EAF6D6] text-[#3D7A00]" : "text-[#666] hover:bg-[#F7F7F7]",
+              "flex h-9 w-9 items-center justify-center rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B500]",
+              view === "table" ? "bg-[#EAF6D6] text-gray-900" : "text-[#666] hover:bg-[#F7F7F7]",
             )}
           >
             <Rows3 className="h-4 w-4" />
@@ -174,8 +187,8 @@ export default function ProductsTable({ products }: { products: PartnerProduct[]
             aria-label="Vista de tarjetas"
             aria-pressed={view === "cards"}
             className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600]",
-              view === "cards" ? "bg-[#EAF6D6] text-[#3D7A00]" : "text-[#666] hover:bg-[#F7F7F7]",
+              "flex h-9 w-9 items-center justify-center rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B500]",
+              view === "cards" ? "bg-[#EAF6D6] text-gray-900" : "text-[#666] hover:bg-[#F7F7F7]",
             )}
           >
             <LayoutGrid className="h-4 w-4" />
@@ -183,7 +196,7 @@ export default function ProductsTable({ products }: { products: PartnerProduct[]
         </div>
 
         <Button asChild className="h-11 gap-2">
-          <Link href="/partner/dashboard/products/new">
+          <Link href="/partner/products/new/edit?step=1">
             <Plus className="h-4 w-4" /> Crear producto
           </Link>
         </Button>
@@ -217,7 +230,7 @@ export default function ProductsTable({ products }: { products: PartnerProduct[]
             description="Crea tu primera excursión para empezar a recibir reservas."
             action={
               <Button asChild className="mt-2">
-                <Link href="/partner/dashboard/products/new">Crear producto</Link>
+              <Link href="/partner/products/new/edit?step=1">Crear producto</Link>
               </Button>
             }
           />
@@ -299,7 +312,7 @@ export default function ProductsTable({ products }: { products: PartnerProduct[]
                 </div>
 
                 <div className="mt-auto flex items-center justify-between pt-2">
-                  <span className="text-lg font-bold text-[#66B600]">
+                  <span className="text-lg font-bold text-gray-900">
                     {formatMoney(p.price)}
                   </span>
                   <span className="flex items-center gap-3 text-xs text-[#666]">
@@ -344,13 +357,13 @@ function RowMenu({
         <button
           type="button"
           aria-label={`Acciones de ${product.title}`}
-          className="flex h-9 w-9 items-center justify-center rounded-sm text-[#666] transition-colors hover:bg-[#F7F7F7] hover:text-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600]"
+          className="flex h-9 w-9 items-center justify-center rounded-sm text-[#666] transition-colors hover:bg-[#F7F7F7] hover:text-[#1A1A1A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B500]"
         >
           <MoreHorizontal className="h-4 w-4" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem onSelect={() => { onAction("edit", product); router.push("/partner/dashboard/products/new"); }}>
+        <DropdownMenuItem onSelect={() => { onAction("edit", product); router.push(`/partner/products/${encodeURIComponent(product.id)}/edit?step=1`); }}>
           <Pencil className="h-4 w-4" /> Editar
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => onAction("duplicate", product)}>

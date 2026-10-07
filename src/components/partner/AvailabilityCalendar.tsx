@@ -47,8 +47,8 @@ const MONTH_NAMES = [
 
 const STATE_STYLES: Record<DayState, { cell: string; dot: string; label: string }> = {
   disponible: {
-    cell: "border-[#CDE8A6] bg-[#EAF6D6] hover:border-[#66B600]",
-    dot: "bg-[#66B600]",
+    cell: "border-[#CDE8A6] bg-[#EAF6D6] hover:border-[#67B500]",
+    dot: "bg-[#67B500]",
     label: "Disponible",
   },
   pocas: {
@@ -208,7 +208,7 @@ export default function AvailabilityCalendar({ products }: { products: PartnerPr
             type="button"
             onClick={() => shiftMonth(-1)}
             aria-label="Mes anterior"
-            className="flex h-11 w-11 items-center justify-center text-[#444] transition-colors hover:bg-[#F7F7F7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600]"
+            className="flex h-11 w-11 items-center justify-center text-[#444] transition-colors hover:bg-[#F7F7F7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B500]"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -219,7 +219,7 @@ export default function AvailabilityCalendar({ products }: { products: PartnerPr
             type="button"
             onClick={() => shiftMonth(1)}
             aria-label="Mes siguiente"
-            className="flex h-11 w-11 items-center justify-center text-[#444] transition-colors hover:bg-[#F7F7F7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600]"
+            className="flex h-11 w-11 items-center justify-center text-[#444] transition-colors hover:bg-[#F7F7F7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B500]"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -260,9 +260,9 @@ export default function AvailabilityCalendar({ products }: { products: PartnerPr
                   aria-label={`${day.date} — ${style.label}`}
                   aria-pressed={isSelected}
                   className={cn(
-                    "flex min-h-[68px] flex-col items-start gap-1 rounded-sm border p-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600] sm:min-h-[80px]",
+                    "flex min-h-[68px] flex-col items-start gap-1 rounded-sm border p-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B500] sm:min-h-[80px]",
                     style.cell,
-                    isSelected && "ring-2 ring-[#66B600] ring-offset-1",
+                    isSelected && "ring-2 ring-[#67B500] ring-offset-1",
                     day.past && "opacity-50",
                   )}
                 >
@@ -309,7 +309,7 @@ export default function AvailabilityCalendar({ products }: { products: PartnerPr
                 type="button"
                 onClick={() => setSelected(null)}
                 aria-label="Cerrar panel"
-                className="flex h-8 w-8 items-center justify-center rounded-sm text-[#666] transition-colors hover:bg-[#F7F7F7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600]"
+                className="flex h-8 w-8 items-center justify-center rounded-sm text-[#666] transition-colors hover:bg-[#F7F7F7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#67B500]"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -363,7 +363,7 @@ export default function AvailabilityCalendar({ products }: { products: PartnerPr
                     return (
                       <label
                         key={slot}
-                        className="cursor-pointer rounded-sm border border-[#E5E5E5] px-2 py-1 text-xs font-medium text-[#444] has-[:checked]:border-[#66B600] has-[:checked]:bg-[#EAF6D6] has-[:checked]:text-[#3D7A00]"
+                        className="cursor-pointer rounded-sm border border-[#E5E5E5] px-2 py-1 text-xs font-medium text-[#444] has-[:checked]:border-[#67B500] has-[:checked]:bg-[#EAF6D6] has-[:checked]:text-gray-900"
                       >
                         <input
                           type="checkbox"

@@ -41,7 +41,13 @@ for (const tour of records) {
   if (!Array.isArray(tour.details?.faqs) || !tour.details.faqs.length) failures.push(`${tour.id} is missing FAQs`);
   if (tour.details?.layout === "multi-day") {
     if (!Array.isArray(tour.details.days) || tour.details.days.length !== tour.durationDays) failures.push(`${tour.id} days must match durationDays`);
+    if (!Array.isArray(tour.details.places) || !tour.details.places.length) failures.push(`${tour.id} multi-day layout requires places`);
+    const placeIds = (tour.details.places ?? []).map((place) => place.id);
+    if (new Set(placeIds).size !== placeIds.length) failures.push(`${tour.id} place ids must be unique`);
   } else if (tour.details?.days) failures.push(`${tour.id} has days but is not a multi-day layout`);
+  for (const [dayIndex, day] of (tour.details?.days ?? []).entries()) {
+    for (const meal of day.meals ?? []) if (!["breakfast", "lunch", "dinner"].includes(meal)) failures.push(`${tour.id}.days[${dayIndex}].meals contains invalid value ${meal}`);
+  }
   if (tour.recommendedTier !== undefined && !tiers.includes(tour.recommendedTier)) failures.push(`${tour.id} has invalid recommendedTier ${tour.recommendedTier}`);
   if (tour.stays !== undefined && tour.details?.layout !== "multi-day") failures.push(`${tour.id} has stays but is not a circuit`);
   if (tour.transferAddon !== undefined && typeof tour.transferAddon !== "boolean") failures.push(`${tour.id} transferAddon must be boolean`);

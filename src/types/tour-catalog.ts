@@ -4,6 +4,7 @@ export type L10n = Record<Locale, string>;
 export type Tier = "economic" | "standard" | "premium";
 export type DetailLayout = "day-tour" | "multi-day" | "wellness" | "service";
 export type PriceUnit = "person" | "vehicle" | "group" | "ticket";
+export type MealType = "breakfast" | "lunch" | "dinner";
 
 export type Feature = {
   id: string;
@@ -27,7 +28,7 @@ export type Day = {
   text: L10n;
   highlights: L10n[];
   overnight?: L10n;
-  meals?: L10n;
+  meals?: MealType[];
 };
 
 export type Stay = {nights: number[]; name: L10n; type: L10n; board: L10n};
@@ -41,6 +42,8 @@ export type TourFaq = {q: L10n; a: L10n};
 
 export type TourDetails = {
   layout: DetailLayout;
+  places?: {id: string; name: L10n}[];
+  leadTitle?: L10n;
   highlights: L10n[];
   overview: L10n[];
   steps?: Step[];

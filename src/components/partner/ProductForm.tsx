@@ -1,1175 +1,204 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "@/i18n/navigation";
-import { toast } from "sonner";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  CheckCircle2,
-  GripVertical,
-  ImageIcon,
-  Plus,
-  Save,
-  Send,
-  Trash2,
-  Upload,
-  X,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import {
-  CANCELLATION_POLICIES,
-  CATEGORIES,
-  CITIES,
-  LANGUAGES,
-  WEEK_DAYS,
-} from "@/data/partner-mock";
-import {
-  productStep1Schema,
-  productStep2Schema,
-  productStep3Schema,
-  productStep4Schema,
-  productStep5Schema,
-  productStep6Schema,
-} from "@/lib/validations/partner";
+import {useRouter} from "@/i18n/navigation";
+import {useLocale} from "next-intl";
+import {toast} from "sonner";
+import {ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, Copy, Download, Eye, ImagePlus, Plus, Save, Trash2, Upload} from "lucide-react";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Textarea} from "@/components/ui/textarea";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {products} from "@/data/partner-mock";
+import {categories, type TourCategory} from "@/data/tour-taxonomy";
+import MapboxPickupSelector, {type PickupPoint} from "@/components/partner/MapboxPickupSelector";
+import type {Tier} from "@/types/tour-catalog";
+import {cn} from "@/lib/utils";
 
-/* ------------------------------- State ------------------------------ */
-
-type Photo = { id: string; url: string; name: string };
-type ItineraryRow = { id: string; time: string; title: string; description: string };
-type FaqRow = { id: string; question: string; answer: string };
-
-type FormState = {
-  // 1
-  title: string;
-  city: string;
-  category: string;
-  shortDescription: string;
-  longDescription: string;
-  // 2
-  duration: string;
-  languages: string[];
-  groupSize: string;
-  pickup: string;
-  includes: string[];
-  excludes: string[];
-  itinerary: ItineraryRow[];
-  // 3
-  photos: Photo[];
-  coverId: string;
-  // 4
-  priceAdult: string;
-  priceChild: string;
-  currency: "EUR";
-  capacity: string;
-  daysOfWeek: string[];
-  cutoffTime: string;
-  cancellationPolicy: string;
-  // 5
-  slug: string;
-  metaDescription: string;
-  faq: FaqRow[];
-  // 6
-  terms: boolean;
+type ProgramItem = {id:string;type:"transport"|"activity"|"hotel";title:string;text:string;duration:string;tiers:Tier[];imageId:string};
+type DayRow = {id:string;number:number;title:string;from:string;to:string;text:string;highlights:string[];overnight:string;meals:string[];imageId:string;items:ProgramItem[]};
+type StayRow = {id: string; nights: number[]; name: string; type: string; board: string};
+type MediaItem = {id: string; name: string; alt: string; caption: string; src?: string};
+type ProductDraft = {
+  internalReference:string;category:string;destination:string;destinationOther:string;durationValue:string;durationUnit:"hours"|"days";adultMinAge:string;adultMaxAge:string;childAllowed:boolean;childMinAge:string;childMaxAge:string;minTravelers:string;maxTravelers:string;layoutOverride:string;
+  title: string; tag: string; summary: string; leadTitle: string; paragraphs: string[]; highlights: string[];
+  daysList: DayRow[]; routeStops: string[]; places: {id:string;name:string;imageId:string}[];
+  included: string[]; notIncluded: string[]; bring: string[]; goodToKnow: string[]; accessibility: string; restrictions: string; cancellation: string; cancellationHours: string; cancellationCustom: string;
+  pickupType:string;pickupStart:string;pickupEnd:string;pickupTimes:string[];pickupNote:string;meetingName:string;meetingAddress:string;sameDropoff:boolean;returnLocation:string;pickupZones:string[];pickupPoints:PickupPoint[];
+  pricingModel: "offers"|"single"|"quote"; priceUnit: "person"|"vehicle"|"group"; prices: Record<Tier,string>; childPrices: Record<Tier,string>; taglines: Record<Tier,string>; recommendedTier: Tier; features: {id:string;label:string;values:Record<Tier,{included:boolean;value:string}>}[]; stays: Record<Tier,StayRow[]>; transferAddon: boolean; transferPrices: {arrival:string;departure:string}; operatingDays: string[]; startTimes: string[]; blackoutDates: string[]; seasonality: string;
+  media: MediaItem[]; coverId: string;
+  slug: string; metaTitle: string; metaDescription: string; primaryKeyword: string; secondaryKeywords: string[]; ogImageId: string; noindex: boolean; relatedTours: string[];
+  faq: {id:string;question:string;answer:string}[]; status: "Draft"|"Ready"|"Published locally"|"Hidden";
 };
 
-const uid = () => Math.random().toString(36).slice(2, 9);
+const TIERS: Tier[] = ["economic","standard"];
+const tierLabel=(tier:Tier)=>tier==="economic"?"Economic":"Recommended";
+const DESTINATIONS = ["Agafay","Zagora","Merzouga","Marrakech","Saidia","Other"];
+const WEEKDAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const STORAGE_KEY = "partner-product-drafts-v2";
+const MEDIA_DB = "partner-product-media-v1";
+const STEPS = ["Basics","Content","Offers & pricing","Programme","Inclusions & info","Pickup & meeting","Media","FAQ","Review","SEO & publish"];
+const blankItem=(type:ProgramItem["type"]):ProgramItem=>({id:uid(),type,title:"",text:"",duration:"",tiers:[],imageId:""});
+const blankDay=(number=1,_multiDay=false):DayRow=>({id:uid(),number,title:"",from:"",to:"",text:"",highlights:[],overnight:"",meals:[],imageId:"",items:[]});
+const blankStay = (): StayRow => ({id:uid(),nights:[],name:"",type:"",board:""});
+function uid(){return globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2,10);}
+function emptyProduct(id:string):ProductDraft {return {internalReference:"",category:"",destination:"",destinationOther:"",durationValue:"1",durationUnit:"hours",adultMinAge:"5",adultMaxAge:"99",childAllowed:true,childMinAge:"1",childMaxAge:"4",minTravelers:"",maxTravelers:"",layoutOverride:"",title:"",tag:"",summary:"",leadTitle:"",paragraphs:[""],highlights:["","", ""],daysList:[blankDay()],routeStops:["",""],places:[{id:uid(),name:"",imageId:""}],included:[""],notIncluded:[""],bring:[""],goodToKnow:[""],accessibility:"",restrictions:"",cancellation:"free",cancellationHours:"24",cancellationCustom:"",pickupType:"",pickupStart:"",pickupEnd:"",pickupTimes:[""],pickupNote:"",meetingName:"",meetingAddress:"",sameDropoff:true,returnLocation:"",pickupZones:[""],pickupPoints:[],pricingModel:"offers",priceUnit:"person",prices:{economic:"",standard:"",premium:""},childPrices:{economic:"",standard:"",premium:""},taglines:{economic:"",standard:"",premium:""},recommendedTier:"standard",features:[newFeature(),newFeature(),newFeature()],stays:{economic:[blankStay()],standard:[blankStay()],premium:[blankStay()]},transferAddon:false,transferPrices:{arrival:"",departure:""},operatingDays:[...WEEKDAYS],startTimes:[""],blackoutDates:[""],seasonality:"",media:[],coverId:"",slug:"",metaTitle:"",metaDescription:"",primaryKeyword:"",secondaryKeywords:[],ogImageId:"",noindex:false,relatedTours:[],faq:[],status:"Draft"};}
+function newFeature(){return {id:uid(),label:"",values:{economic:{included:false,value:""},standard:{included:false,value:""},premium:{included:false,value:""}}};}
+function slugify(value:string){return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");}
+function deriveLayout(p:ProductDraft){if(p.layoutOverride)return p.layoutOverride;if(p.category==="hammam-spa")return "wellness";if(p.category==="transfers")return "service";if(p.durationUnit==="days"&&Number(p.durationValue)>=2)return "multi-day";return "day-tour";}
+function openMediaDb():Promise<IDBDatabase>{return new Promise((resolve,reject)=>{const req=indexedDB.open(MEDIA_DB,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains("images"))req.result.createObjectStore("images");};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+async function putMedia(key:string,value:Blob){const db=await openMediaDb();await new Promise<void>((resolve,reject)=>{const tx=db.transaction("images","readwrite");tx.objectStore("images").put(value,key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});db.close();}
+async function getMedia(key:string):Promise<Blob|undefined>{const db=await openMediaDb();const value=await new Promise<Blob|undefined>((resolve,reject)=>{const req=db.transaction("images").objectStore("images").get(key);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});db.close();return value;}
+async function deleteMedia(key:string){const db=await openMediaDb();await new Promise<void>((resolve,reject)=>{const tx=db.transaction("images","readwrite");tx.objectStore("images").delete(key);tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});db.close();}
+async function compressImage(file:File):Promise<Blob>{if(!["image/jpeg","image/png","image/webp"].includes(file.type))throw new Error("Use JPEG, PNG, or WebP images.");if(file.size>10*1024*1024)throw new Error("Each image must be 10 MB or smaller.");const image=await createImageBitmap(file);const scale=Math.min(1,1600/Math.max(image.width,image.height));const canvas=document.createElement("canvas");canvas.width=Math.round(image.width*scale);canvas.height=Math.round(image.height*scale);const ctx=canvas.getContext("2d");if(!ctx)throw new Error("Could not process this image.");ctx.drawImage(image,0,0,canvas.width,canvas.height);image.close();return await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("Image compression failed.")),"image/jpeg",.8));}
 
-const initialState: FormState = {
-  title: "",
-  city: "",
-  category: "",
-  shortDescription: "",
-  longDescription: "",
-  duration: "",
-  languages: [],
-  groupSize: "12",
-  pickup: "",
-  includes: [],
-  excludes: [],
-  itinerary: [
-    { id: uid(), time: "09:00", title: "", description: "" },
-    { id: uid(), time: "11:00", title: "", description: "" },
-  ],
-  photos: [],
-  coverId: "",
-  priceAdult: "",
-  priceChild: "",
-  currency: "EUR",
-  capacity: "12",
-  daysOfWeek: ["Lun", "Mar", "Mié", "Jue", "Vie"],
-  cutoffTime: "18:00",
-  cancellationPolicy: "",
-  slug: "",
-  metaDescription: "",
-  faq: [{ id: uid(), question: "", answer: "" }],
-  terms: false,
-};
+export default function ProductForm({productId="new"}:{productId?:string}){
+ const router=useRouter();const locale=useLocale();const [step,setStep]=React.useState(0);const [state,setState]=React.useState<ProductDraft>(()=>emptyProduct(productId));const [loaded,setLoaded]=React.useState(false);const [dirty,setDirty]=React.useState(false);const [error,setError]=React.useState("");const fileRef=React.useRef<HTMLInputElement>(null);
+ const refFor=(key:string)=>`${productId}:${key}`;
+ React.useEffect(()=>{
+  const requested=Number(new URLSearchParams(window.location.search).get("step")??"1");setStep(Math.max(0,Math.min(STEPS.length-1,requested-1)));
+  let saved:Record<string,unknown>={};try{saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");}catch{}
+  const stored=(saved[productId]??{}) as Partial<ProductDraft>&{days?:string;hours?:string;minutes?:string;nights?:string;languages?:string[]};
+  let next={...emptyProduct(productId),...stored};
+  if(!stored.durationValue){const legacyDays=stored.days?.match(/(\d+)/)?.[1];const legacyHours=stored.hours?.match(/(\d+)/)?.[1];next.durationValue=legacyDays??legacyHours??"1";next.durationUnit=legacyDays?"days":"hours";}
+  delete (next as ProductDraft&{languages?:string[]}).languages;
+  const validCategories=Object.keys(categories);if(!validCategories.includes(next.category)){const old=next.category.toLowerCase();next.category=old.includes("costa")?"saidia-beach":old.includes("circuit")?"circuits":old.includes("aventura")?"private-tours":old.includes("hammam")?"hammam-spa":old.includes("gastronom")?"dinner-shows":old.includes("traslad")?"transfers":old.includes("privad")?"private-tours":"desert";}
+  if(!Array.isArray(stored.pickupPoints))next.pickupPoints=[];next.childPrices={economic:"",standard:"",premium:"",...(stored as Partial<ProductDraft>).childPrices};
+  const dayCount=next.durationUnit==="days"?Math.max(1,Math.min(30,Number(next.durationValue)||1)):1;
+  next.daysList=Array.from({length:Math.max(dayCount,next.daysList?.length??0)},(_,index)=>{const previous=next.daysList?.[index];const items=Array.isArray(previous?.items)?previous.items:[];return {...(previous??blankDay(index+1,dayCount>1)),number:index+1,items};});
+  if(!next.internalReference){let used=0;try{used=Math.max(0,...Object.values(saved).map(item=>Number((item as ProductDraft).internalReference?.match(/TV-(\d+)/)?.[1]||0)));}catch{}next.internalReference=`TV-${String(used+1).padStart(4,"0")}`;}
+  const legacy=products.find(p=>p.id===productId);if(legacy&&!next.title){next.title=legacy.title;next.category=legacy.category.toLowerCase().includes("costa")?"saidia-beach":legacy.category.toLowerCase().includes("circuit")?"circuits":legacy.category.toLowerCase().includes("aventura")?"private-tours":"desert";next.destination=legacy.city;next.summary=legacy.shortDescription;next.slug=legacy.slug;const legacyDays=legacy.duration.match(/(\d+)\s*d/)?.[1];const legacyHours=legacy.duration.match(/(\d+)\s*h/)?.[1];next.durationValue=legacyDays??legacyHours??"1";next.durationUnit=legacyDays?"days":"hours";next.daysList=Array.from({length:next.durationUnit==="days"?Number(next.durationValue):1},(_,index)=>blankDay(index+1,next.durationUnit==="days"&&Number(next.durationValue)>=2));next.maxTravelers=String(legacy.groupSize);next.pickupType=legacy.pickup?"meeting":"none";next.meetingAddress=legacy.pickup;next.pricingModel="single";next.prices={...next.prices,standard:String(legacy.price)};next.included=[""];next.status=legacy.status==="Activo"?"Published locally":"Draft";}
+  setState(next);setLoaded(true);
+ },[productId]);
+ React.useEffect(()=>{const sync=()=>{const requested=Number(new URLSearchParams(window.location.search).get("step")??"1");setStep(Math.max(0,Math.min(STEPS.length-1,requested-1)));};window.addEventListener("popstate",sync);return()=>window.removeEventListener("popstate",sync);},[]);
+ React.useEffect(()=>{if(!loaded)return;const handle=window.setTimeout(()=>{const clean={...state,media:state.media.map(({src,...media})=>media)};const raw=localStorage.getItem(STORAGE_KEY);let all:Record<string,ProductDraft>={};try{all=raw?JSON.parse(raw):{};}catch{}all[productId]=clean;localStorage.setItem(STORAGE_KEY,JSON.stringify(all));setDirty(false);},500);return()=>window.clearTimeout(handle);},[loaded,state,productId]);
+ React.useEffect(()=>{let active=true;void Promise.all(state.media.map(async item=>{if(item.src)return item;const blob=await getMedia(refFor(item.id));return blob?{...item,src:URL.createObjectURL(blob)}:item;})).then(media=>{if(active&&media.some((m,i)=>m.src!==state.media[i]?.src))setState(s=>({...s,media}));});return()=>{active=false;state.media.forEach(item=>{if(item.src?.startsWith("blob:"))URL.revokeObjectURL(item.src);});};},[loaded]);
+ function patch<K extends keyof ProductDraft>(key:K,value:ProductDraft[K]){setState(s=>({...s,[key]:value}));setDirty(true);setError("");}
+ function go(index:number){const next=Math.max(0,Math.min(STEPS.length-1,index));setStep(next);window.history.replaceState(null,"",`${window.location.pathname}?step=${next+1}`);window.scrollTo({top:0,behavior:"smooth"});}
+ function move<T>(list:T[],index:number,direction:-1|1){const target=index+direction;if(target<0||target>=list.length)return list;const copy=[...list];[copy[index],copy[target]]=[copy[target],copy[index]];return copy;}
+ function addToList(key:"paragraphs"|"highlights"|"included"|"notIncluded"|"bring"|"goodToKnow"|"routeStops"|"pickupTimes"|"pickupZones"|"startTimes"|"blackoutDates"|"secondaryKeywords",value=""){patch(key,[...state[key],value] as ProductDraft[typeof key]);}
+ function listEdit(key:"paragraphs"|"highlights"|"included"|"notIncluded"|"bring"|"goodToKnow"|"routeStops"|"pickupTimes"|"pickupZones"|"startTimes"|"blackoutDates"|"secondaryKeywords",index:number,value:string){patch(key,state[key].map((item,i)=>i===index?value:item) as ProductDraft[typeof key]);}
+ function moveList(key:"paragraphs"|"highlights"|"included"|"notIncluded"|"bring"|"goodToKnow"|"routeStops"|"pickupTimes"|"pickupZones"|"startTimes"|"blackoutDates"|"secondaryKeywords",index:number,direction:-1|1){patch(key,move(state[key],index,direction) as ProductDraft[typeof key]);}
+ function removeList(key:"paragraphs"|"highlights"|"included"|"notIncluded"|"bring"|"goodToKnow"|"routeStops"|"pickupTimes"|"pickupZones"|"startTimes"|"blackoutDates"|"secondaryKeywords",index:number){patch(key,state[key].filter((_,i)=>i!==index) as ProductDraft[typeof key]);}
+async function importFiles(files:FileList|null){if(!files)return;const candidates=Array.from(files);if(state.media.length+candidates.length>12){setError("Add no more than 12 images.");return;}try{const media:MediaItem[]=[];for(const file of candidates){const id=uid();const blob=await compressImage(file);await putMedia(refFor(id),blob);media.push({id,name:file.name,alt:"",caption:"",src:URL.createObjectURL(blob)});}setState(s=>{const combined=[...s.media,...media];return {...s,media:combined,coverId:s.coverId||combined[0]?.id||"",ogImageId:s.ogImageId||combined[0]?.id||""};});setError("");}catch(e){setError(e instanceof Error?e.message:"Could not prepare this image.");}}
+ function updateMedia(id:string,key:"alt"|"caption",value:string){patch("media",state.media.map(item=>item.id===id?{...item,[key]:value}:item));}
+ async function deletePhoto(id:string){const item=state.media.find(m=>m.id===id);if(item?.src?.startsWith("blob:"))URL.revokeObjectURL(item.src);await deleteMedia(refFor(id));patch("media",state.media.filter(m=>m.id!==id));if(state.coverId===id)patch("coverId",state.media.find(m=>m.id!==id)?.id??"");if(state.ogImageId===id)patch("ogImageId",state.media.find(m=>m.id!==id)?.id??"");}
+ function toggleArray<K extends keyof ProductDraft>(key:K,value:string){const current=state[key] as string[];patch(key,(current.includes(value)?current.filter(v=>v!==value):[...current,value]) as ProductDraft[K]);}
+ function setDayRow(index:number,key:keyof DayRow,value:unknown){patch("daysList",state.daysList.map((row,i)=>i===index?{...row,[key]:value}:row));}
+ function updateDuration(value:string,unit:"days"|"hours"){const amount=Math.floor(Math.max(1,Math.min(30,Number(value)||1)));const multiDay=unit==="days"&&amount>=2;setState(current=>{const count=unit==="days"?amount:1;const rows=[...current.daysList];while(rows.length<count)rows.push(blankDay(rows.length+1,multiDay));const active=rows.slice(0,count).map((day,index)=>({...day,number:index+1}));return {...current,durationValue:value,durationUnit:unit,daysList:[...active,...rows.slice(count)]};});setDirty(true);setError("");}
+ function setFeature(index:number,change:Partial<ProductDraft["features"][number]>){patch("features",state.features.map((feature,i)=>i===index?{...feature,...change}:feature));}
+ function fieldList(title:string,key:"paragraphs"|"highlights"|"included"|"notIncluded"|"bring"|"goodToKnow",min?:number,max?:number){return <StringList title={title} items={state[key]} min={min} max={max} onAdd={()=>addToList(key)} onEdit={(i,v)=>listEdit(key,i,v)} onRemove={i=>removeList(key,i)} onMove={(i,d)=>moveList(key,i,d)}/>;}
+ const layout=deriveLayout(state);const durationDays=state.durationUnit==="days"?Math.max(1,Math.floor(Number(state.durationValue)||1)):1;
+ const slugConflict=Boolean(state.slug&&(products.some(p=>p.slug===state.slug&&p.id!==productId)||readProducts().some(([id,p])=>id!==productId&&p.slug===state.slug)));
+ const isReady=Boolean(state.title.trim().length>=3&&state.summary.trim()&&state.paragraphs.some(x=>x.trim())&&state.highlights.filter(x=>x.trim()).length>=3&&state.coverId&&state.media.length>=3&&state.media.find(m=>m.id===state.coverId)?.alt.trim()&&Number.isInteger(Number(state.durationValue))&&Number(state.durationValue)>=1&&validAgeRanges(state)&&state.daysList.slice(0,durationDays).length===durationDays&&state.daysList.slice(0,durationDays).every(day=>day.items.length>0&&day.items.every(item=>item.title.trim()&&item.text.trim()))&&state.included.some(x=>x.trim())&&pickupReady(state)&&priceValid(state)&&slugify(state.slug)===state.slug&&!slugConflict&&state.metaTitle.trim()&&state.metaDescription.trim());
+ function stepChecks(){return [
+  [Boolean(state.category&&state.destination&&Number.isInteger(Number(state.durationValue))&&Number(state.durationValue)>=1),"Basics"],
+  [Boolean(state.title&&state.summary&&state.paragraphs.some(x=>x.trim())&&state.highlights.filter(x=>x.trim()).length>=3),"Content"],
+  [priceValid(state),"Offers and pricing"],
+  [state.daysList.slice(0,durationDays).length===durationDays&&state.daysList.slice(0,durationDays).every(day=>day.items.length>0&&day.items.every(item=>item.title.trim()&&item.text.trim())),"Programme"],
+  [state.included.some(x=>x.trim())&&validAgeRanges(state),"Inclusions and info"],
+  [pickupReady(state),"Pickup and meeting"],
+  [Boolean(state.coverId&&state.media.find(m=>m.id===state.coverId)?.alt.trim()&&state.media.length>=3),"Media"],
+  [state.faq.some(f=>f.question&&f.answer),"FAQ"],
+  [isReady,"Review"],
+  [Boolean(state.slug&&state.metaTitle&&state.metaDescription&&!slugConflict),"SEO"],
+ ] as [boolean,string][];}
+async function publish(){if(!isReady){setError("Ready requires English copy, a complete programme, a cover with alt text, 3+ images, pickup details, valid pricing and complete SEO.");return;}setError("");const published={...state,status:"Published locally" as const};const raw=localStorage.getItem(STORAGE_KEY);let all:Record<string,ProductDraft>={};try{all=raw?JSON.parse(raw):{};}catch{}all[productId]={...published,media:published.media.map(({src,...media})=>media)};localStorage.setItem(STORAGE_KEY,JSON.stringify(all));setState(published);toast.success("Product saved locally.");router.push("/partner/dashboard/products");}
+ function downloadJson(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`${state.slug||"product"}.json`;a.click();URL.revokeObjectURL(url);}
+ function duplicate(){const raw=localStorage.getItem(STORAGE_KEY);let all:Record<string,ProductDraft>={};try{all=raw?JSON.parse(raw):{};}catch{}const used=Math.max(0,...Object.values(all).map(item=>Number(item.internalReference?.match(/TV-(\d+)/)?.[1]||0)));const copy={...state,internalReference:`TV-${String(used+1).padStart(4,"0")}`,title:state.title?`${state.title} (copy)`:"",slug:state.slug?`${state.slug}-copy`:"",status:"Draft" as const};const key=`copy-${uid()}`;all[key]={...copy,media:copy.media.map(({src,...m})=>m)};localStorage.setItem(STORAGE_KEY,JSON.stringify(all));toast.success("Draft copy created.");}
+ function preview(){const raw=localStorage.getItem(STORAGE_KEY);let all:Record<string,ProductDraft>={};try{all=raw?JSON.parse(raw):{};}catch{}all[productId]={...state,media:state.media.map(({src,...m})=>m)};localStorage.setItem(STORAGE_KEY,JSON.stringify(all));const locale=window.location.pathname.split("/")[1]||"en";window.open(`/${locale}/partner/products/${encodeURIComponent(productId)}/preview`,"_blank","noopener,noreferrer");}
+ const previewUrl=`/${locale}/tours/${state.slug||"your-product-slug"}`;
+ const seoJsonLd=[{"@context":"https://schema.org","@type":"Product",name:state.title,description:state.summary},{"@context":"https://schema.org","@type":"TouristTrip",name:state.title,description:state.summary},{"@context":"https://schema.org","@type":"FAQPage",mainEntity:state.faq.filter(f=>f.question&&f.answer).map(f=>({"@type":"Question",name:f.question,acceptedAnswer:{"@type":"Answer",text:f.answer}}))},{"@context":"https://schema.org","@type":"BreadcrumbList",itemListElement:["Home","Tours",state.title].map((name,position)=>({"@type":"ListItem",position:position+1,name}))}];
 
-const STEPS = [
-  "Información básica",
-  "Detalles",
-  "Fotos",
-  "Precios y disponibilidad",
-  "SEO y FAQ",
-  "Revisión",
-] as const;
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+ return <div className="flex flex-col gap-5">
+  <section className="rounded-sm border border-[#E5E5E5] bg-white p-5">
+   <div className="flex items-center justify-between gap-4"><div><p className="text-sm font-semibold text-[#222]">Step {step+1} of 10 · {STEPS[step]}</p><p className="mt-1 text-xs text-[#777]">{state.internalReference||"Assigning reference…"} · {dirty?"Unsaved changes":"Draft auto-saved"}</p></div><span className="text-xs text-[#777]">{Math.round((step+1)/10*100)}%</span></div>
+   <div className="mt-3 h-2 overflow-hidden rounded-full bg-[#eee]"><div className="h-full bg-[#67B500] transition-all" style={{width:`${(step+1)*10}%`}}/></div>
+   <nav aria-label="Product editor steps" className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5 lg:grid-cols-10">{STEPS.map((label,index)=><button key={label} type="button" onClick={()=>go(index)} className={cn("rounded-sm px-2 py-2 text-left text-[11px]",index===step?"bg-[#eaf4e6] font-semibold text-gray-900":"text-[#777] hover:bg-[#f7f7f7]")}><span className="mr-1 font-bold">{index+1}</span>{label}</button>)}</nav>
+  </section>
+  <section className="rounded-sm border border-[#E5E5E5] bg-white p-5 md:p-6">
+   {step===0&&<div className="grid gap-5 md:grid-cols-2">
+    <Field label="Internal reference"><Input value={state.internalReference} readOnly className="bg-[#f7f7f7]"/><Hint>Automatically assigned and unique to this product.</Hint></Field>
+    <Field label="Category"><Select value={state.category} onValueChange={v=>patch("category",v)}><SelectTrigger><SelectValue placeholder="Choose a category"/></SelectTrigger><SelectContent>{(Object.keys(categories) as TourCategory[]).map(c=><SelectItem key={c} value={c}>{categories[c].name[locale as "en"|"es"|"pt"]}</SelectItem>)}</SelectContent></Select></Field>
+    <Field label="Destination"><Select value={state.destination} onValueChange={v=>patch("destination",v)}><SelectTrigger><SelectValue placeholder="Choose destination"/></SelectTrigger><SelectContent>{DESTINATIONS.map(c=><SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></Field>
+    {state.destination==="Other"&&<Field label="Destination name"><Input value={state.destinationOther} onChange={e=>patch("destinationOther",e.target.value)} placeholder="Enter destination"/></Field>}
+    <Field label="Duration"><div className="flex gap-2"><Input type="number" min="1" step="1" value={state.durationValue} onChange={e=>updateDuration(e.target.value,state.durationUnit)} className="max-w-40"/><Select value={state.durationUnit} onValueChange={v=>updateDuration(state.durationValue,v as "days"|"hours")}><SelectTrigger className="max-w-40"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="hours">Hours</SelectItem><SelectItem value="days">Days</SelectItem></SelectContent></Select></div><Hint>Enter one duration, then choose hours or days.</Hint></Field>
+    <div className="grid grid-cols-2 gap-3"><Field label="Minimum travelers (optional)"><Input type="number" min="1" value={state.minTravelers} onChange={e=>patch("minTravelers",e.target.value)}/></Field><Field label="Maximum travelers (optional)"><Input type="number" min="1" value={state.maxTravelers} onChange={e=>patch("maxTravelers",e.target.value)}/></Field></div>
+    <div className="rounded-sm border border-[#dce8d7] bg-[#f6faf4] p-4 md:col-span-2"><p className="font-semibold">Programme layout: {layout}</p><p className="text-sm text-[#555]">The category and duration select the right programme fields automatically. Two or more days use a day-by-day circuit; Hammam & Spa and Airport Transfers use their dedicated layout.</p><Field label="Layout override (optional)"><Select value={state.layoutOverride||"automatic"} onValueChange={v=>patch("layoutOverride",v==="automatic"?"":v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="automatic">Automatic: {deriveLayout({...state,layoutOverride:""})}</SelectItem>{["day-tour","multi-day","wellness","service"].map(v=><SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent></Select></Field></div>
+   </div>}
+   {step===1&&<div className="grid gap-5">
+    <Field label="Product title" hint={`${state.title.length}/60 · recommended 50–60 characters`}><Input maxLength={60} value={state.title} onChange={e=>{patch("title",e.target.value);if(!state.slug||state.slug===slugify(state.title))patch("slug",slugify(e.target.value));if(!state.metaTitle||state.metaTitle===state.title)patch("metaTitle",e.target.value.slice(0,60));}}/></Field>
+    <Field label="Summary" hint={`${state.summary.length}/155`}><Textarea maxLength={155} rows={3} value={state.summary} onChange={e=>patch("summary",e.target.value)}/></Field>
+    {fieldList("Overview paragraphs","paragraphs",1)}{fieldList("Highlights (3–8 items)","highlights",3,8)}
+   </div>}
+   {step===3&&<div className="grid gap-5">
+    <div className="rounded-sm bg-[#f6faf4] p-3 text-sm"><b>{layout==="multi-day"?`${durationDays}-day programme`:`One-day programme`}</b> · Add as many transport, activity, or hotel items as needed to each day. For two offers, each item can be shared or assigned to selected offers.</div>
+    {state.daysList.slice(0,durationDays).map((day,i)=><section key={day.id} className="grid gap-4 rounded border border-[#e0e0e0] p-4"><div className="flex items-center justify-between"><h3 className="font-semibold text-[#222]">Day {i+1}{day.title?` · ${day.title}`:""}</h3><span className="text-xs text-[#777]">{state.durationUnit==="hours"?`${state.durationValue} hour activity`:layout==="multi-day"?"Circuit day":"Activity day"}</span></div><div className="grid gap-3 md:grid-cols-2"><Field label="Day title"><Input value={day.title} onChange={e=>setDayRow(i,"title",e.target.value)} placeholder={i===0?"Marrakech arrival":"Desert transfer"}/></Field><Field label="Overnight place (multi-day)"><Input value={day.overnight} onChange={e=>setDayRow(i,"overnight",e.target.value)} placeholder="City, camp or hotel"/></Field><Field label="From"><Input value={day.from} onChange={e=>setDayRow(i,"from",e.target.value)}/></Field><Field label="To"><Input value={day.to} onChange={e=>setDayRow(i,"to",e.target.value)}/></Field><Field label="Day description"><Textarea rows={2} value={day.text} onChange={e=>setDayRow(i,"text",e.target.value)}/></Field><div className="grid gap-3"><StringList title="Day highlights" items={day.highlights} onAdd={()=>setDayRow(i,"highlights",[...day.highlights,""])} onEdit={(n,v)=>setDayRow(i,"highlights",day.highlights.map((x,j)=>j===n?v:x))} onRemove={n=>setDayRow(i,"highlights",day.highlights.filter((_,j)=>j!==n))}/><Field label="Meals"><CheckOptions options={["Breakfast","Lunch","Dinner"]} selected={day.meals} onToggle={v=>setDayRow(i,"meals",day.meals.includes(v)?day.meals.filter(x=>x!==v):[...day.meals,v])}/></Field></div><Field label="Day image"><ImageSelect media={state.media} value={day.imageId} onChange={v=>setDayRow(i,"imageId",v)}/></Field></div><div className="grid gap-3"><div className="flex items-center justify-between"><h4 className="text-sm font-semibold">Programme items · Day {i+1}</h4><select aria-label={`Add programme item to day ${i+1}`} value="" className="h-9 rounded-sm border border-[#67B500] bg-white px-3 text-sm font-semibold text-gray-900" onChange={e=>{const type=e.target.value as ProgramItem["type"];if(type)setDayRow(i,"items",[...day.items,blankItem(type)]);}}><option value="">＋ Add</option><option value="transport">Transport</option><option value="activity">Activity</option><option value="hotel">Hotel</option></select></div><SortableRows hideAdd title={`Day ${i+1} item`} rows={day.items} onAdd={()=>{}} onMove={(n,d)=>setDayRow(i,"items",move(day.items,n,d))} onRemove={n=>setDayRow(i,"items",day.items.filter((_,j)=>j!==n))} render={(item,n)=><div className="grid gap-3 md:grid-cols-2"><div className="flex items-center"><span className="rounded-full bg-[#f1f7ed] px-3 py-1 text-xs font-semibold capitalize text-gray-900">{item.type==="hotel"?"Hotel / stay":item.type}</span></div><Field label="Title"><Input value={item.title} onChange={e=>setDayRow(i,"items",day.items.map((x,j)=>j===n?{...x,title:e.target.value}:x))} placeholder="Airport transfer, guided tour, riad stay"/></Field><Field label="Duration"><Input value={item.duration} onChange={e=>setDayRow(i,"items",day.items.map((x,j)=>j===n?{...x,duration:e.target.value}:x))} placeholder="45 minutes"/></Field><Field label="Image"><ImageSelect media={state.media} value={item.imageId} onChange={v=>setDayRow(i,"items",day.items.map((x,j)=>j===n?{...x,imageId:v}:x))}/></Field><div className="md:col-span-2"><Field label="Description"><Textarea rows={2} value={item.text} onChange={e=>setDayRow(i,"items",day.items.map((x,j)=>j===n?{...x,text:e.target.value}:x))}/></Field></div><div className="md:col-span-2">{state.pricingModel==="offers"?<><label className="flex items-center gap-2 text-xs font-medium"><input type="checkbox" checked={!item.tiers.length} onChange={e=>setDayRow(i,"items",day.items.map((x,j)=>j===n?{...x,tiers:e.target.checked?[]:["standard"]}:x))}/> Shared across all offers</label>{item.tiers.length>0&&<div className="mt-2"><CheckOptions options={TIERS} selected={item.tiers} onToggle={v=>{const next=item.tiers.includes(v as Tier)?item.tiers.filter(t=>t!==v):[...item.tiers,v as Tier];setDayRow(i,"items",day.items.map((x,j)=>j===n?{...x,tiers:next.length===TIERS.length?[]:next}:x));}}/></div>}</>:<p className="text-xs text-[#777]">This programme item is shared by the single offer.</p>}</div></div>}/></div></section>)}
+    {layout==="multi-day"&&<p className="text-xs text-[#777]">There are {durationDays} days in this circuit. The programme rows above follow that duration.</p>}
+    {layout==="multi-day"&&<><StringList title="Route stops (ordered)" items={state.routeStops} onAdd={()=>addToList("routeStops")} onEdit={(i,v)=>listEdit("routeStops",i,v)} onMove={(i,d)=>moveList("routeStops",i,d)} onRemove={i=>removeList("routeStops",i)}/><SortableRows title="Places visited" rows={state.places} onAdd={()=>patch("places",[...state.places,{id:uid(),name:"",imageId:""}])} onMove={(i,d)=>patch("places",move(state.places,i,d))} onRemove={i=>patch("places",state.places.filter((_,n)=>n!==i))} render={(place,i)=><div className="grid gap-3 md:grid-cols-2"><Field label="Place name"><Input value={place.name} onChange={e=>patch("places",state.places.map((p,n)=>n===i?{...p,name:e.target.value}:p))}/></Field><Field label="Gallery image"><ImageSelect media={state.media} value={place.imageId} onChange={v=>patch("places",state.places.map((p,n)=>n===i?{...p,imageId:v}:p))}/></Field></div>}/></>}
+   </div>}
+   {step===4&&<div className="grid gap-5">
+    <div className="grid gap-5 md:grid-cols-2">{fieldList("Included","included",1)}{fieldList("Not included","notIncluded")}{fieldList("What to bring","bring")}{fieldList("Good to know / important information","goodToKnow")}</div>
+    <Field label="Accessibility information"><Textarea rows={3} value={state.accessibility} onChange={e=>patch("accessibility",e.target.value)}/></Field><div className="grid gap-4 rounded border p-4 md:grid-cols-2"><AgeRange label="Adult age range" min={state.adultMinAge} max={state.adultMaxAge} onMin={v=>patch("adultMinAge",v)} onMax={v=>patch("adultMaxAge",v)}/><div className="grid gap-3"><label className="flex items-center gap-2 text-xs font-medium"><input type="checkbox" checked={state.childAllowed} onChange={e=>patch("childAllowed",e.target.checked)}/> Children accepted</label>{state.childAllowed&&<AgeRange label="Child age range" min={state.childMinAge} max={state.childMaxAge} onMin={v=>patch("childMinAge",v)} onMax={v=>patch("childMaxAge",v)}/>}</div></div><Field label="Age or health restrictions"><Textarea rows={3} value={state.restrictions} onChange={e=>patch("restrictions",e.target.value)}/></Field>
+    <Field label="Cancellation policy"><Select value={state.cancellation} onValueChange={v=>patch("cancellation",v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="free">Free cancellation up to N hours</SelectItem><SelectItem value="non-refundable">Non-refundable</SelectItem><SelectItem value="custom">Custom policy</SelectItem></SelectContent></Select></Field>{state.cancellation==="free"&&<Field label="Free cancellation hours"><Input type="number" min="0" value={state.cancellationHours} onChange={e=>patch("cancellationHours",e.target.value)}/></Field>}{state.cancellation==="custom"&&<Field label="Custom cancellation text"><Textarea value={state.cancellationCustom} onChange={e=>patch("cancellationCustom",e.target.value)}/></Field>}
+   </div>}
+   {step===5&&<div className="grid gap-5 md:grid-cols-2">
+    <Field label="Pickup type"><Select value={state.pickupType} onValueChange={v=>patch("pickupType",v)}><SelectTrigger><SelectValue placeholder="Select pickup arrangement"/></SelectTrigger><SelectContent>{[["hotel","Hotel or riad pickup"],["meeting","Meeting point"],["both","Both"],["none","None"]].map(([v,l])=><SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent></Select></Field>
+    <Field label="Pickup time window"><div className="flex items-center gap-2"><Input type="time" value={state.pickupStart} onChange={e=>patch("pickupStart",e.target.value)}/><span>to</span><Input type="time" value={state.pickupEnd} onChange={e=>patch("pickupEnd",e.target.value)}/></div></Field>
+    <div className="md:col-span-2"><StringList title="Fixed pickup times" items={state.pickupTimes} onAdd={()=>addToList("pickupTimes")} onEdit={(i,v)=>listEdit("pickupTimes",i,v)} onMove={(i,d)=>moveList("pickupTimes",i,d)} onRemove={i=>removeList("pickupTimes",i)}/></div>
+    <div className="md:col-span-2"><Field label="Pickup note"><Textarea value={state.pickupNote} onChange={e=>patch("pickupNote",e.target.value)}/></Field></div>
+    {!(state.pickupType==="hotel"&&state.destination==="Marrakech")&&<><Field label="Meeting point name"><Input value={state.meetingName} onChange={e=>patch("meetingName",e.target.value)}/></Field><Field label="Meeting point address"><Textarea value={state.meetingAddress} onChange={e=>patch("meetingAddress",e.target.value)}/></Field></>}
+    <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={state.sameDropoff} onChange={e=>patch("sameDropoff",e.target.checked)}/> Drop-off is the same as pickup</label>{!state.sameDropoff&&<Field label="Return location"><Input value={state.returnLocation} onChange={e=>patch("returnLocation",e.target.value)}/></Field>}
+    <div className="md:col-span-2"><StringList title="Pickup area names" items={state.pickupZones} onAdd={()=>addToList("pickupZones")} onEdit={(i,v)=>listEdit("pickupZones",i,v)} onRemove={i=>removeList("pickupZones",i)}/></div><div className="md:col-span-2">{state.pickupType==="none"?<p className="rounded bg-[#f7f7f7] p-3 text-sm text-[#555]">No pickup is offered for this product.</p>:state.pickupType==="hotel"&&state.destination==="Marrakech"?<p className="rounded border border-[#dce8d7] bg-[#f6faf4] p-3 text-sm text-[#355d2d]">Hotel or riad pickup anywhere in Marrakech. No fixed meeting point is needed.</p>:<MapboxPickupSelector points={state.pickupPoints} onChange={value=>patch("pickupPoints",value)} destination={state.destination}/>}</div>
+   </div>}
+   {step===2&&<div className="grid gap-5">
+    <div className="grid gap-4 md:grid-cols-3"><Field label="Offer setup"><Select value={state.pricingModel} onValueChange={v=>{patch("pricingModel",v as ProductDraft["pricingModel"]);if(v!=="offers")setState(current=>({...current,daysList:current.daysList.map(day=>({...day,items:day.items.map(item=>({...item,tiers:[]}))}))}));}}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="single">Single offer</SelectItem><SelectItem value="offers">Multiple offers (2)</SelectItem><SelectItem value="quote">Quote only</SelectItem></SelectContent></Select></Field><Field label="Price unit"><Select value={state.priceUnit} onValueChange={v=>patch("priceUnit",v as ProductDraft["priceUnit"])}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{["person","vehicle","group"].map(v=><SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent></Select></Field>{state.pricingModel==="single"&&<div className="grid gap-3 md:col-span-2 md:grid-cols-2"><Field label="Adult price (€)"><Input type="number" min="0" step="1" value={state.prices.standard} onChange={e=>patch("prices",{...state.prices,standard:e.target.value})}/></Field>{state.childAllowed&&<Field label="Child price (€)"><Input type="number" min="0" step="1" value={state.childPrices.standard} onChange={e=>patch("childPrices",{...state.childPrices,standard:e.target.value})}/></Field>}</div>}</div>
+    {state.pricingModel==="offers"&&<>
+     <div className="overflow-x-auto"><table className="w-full min-w-[520px] border-collapse text-sm"><thead><tr><th className="border p-2 text-left">Offer</th>{TIERS.map(t=><th className="border p-2" key={t}>{tierLabel(t)}</th>)}</tr></thead><tbody><tr><th className="border p-2 text-left">Adult price (€)</th>{TIERS.map(t=><td className="border p-2" key={t}><Input type="number" step="1" min="0" value={state.prices[t]} onChange={e=>patch("prices",{...state.prices,[t]:e.target.value})}/></td>)}</tr>{state.childAllowed&&<tr><th className="border p-2 text-left">Child price (€)</th>{TIERS.map(t=><td className="border p-2" key={t}><Input type="number" step="1" min="0" value={state.childPrices[t]} onChange={e=>patch("childPrices",{...state.childPrices,[t]:e.target.value})}/></td>)}</tr>}<tr><th className="border p-2 text-left">Tagline</th>{TIERS.map(t=><td className="border p-2" key={t}><Input value={state.taglines[t]} onChange={e=>patch("taglines",{...state.taglines,[t]:e.target.value})}/></td>)}</tr></tbody></table></div>
+     <Field label="Recommended offer"><Select value={state.recommendedTier} onValueChange={v=>patch("recommendedTier",v as Tier)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{TIERS.map(t=><SelectItem key={t} value={t}>{tierLabel(t)}</SelectItem>)}</SelectContent></Select></Field>
+     <SortableRows title="Feature matrix (at least 3 features)" rows={state.features} onAdd={()=>patch("features",[...state.features,newFeature()])} onMove={(i,d)=>patch("features",move(state.features,i,d))} onRemove={i=>patch("features",state.features.filter((_,n)=>n!==i))} render={(feature,i)=><div className="grid gap-3"><Field label="Feature label"><Input value={feature.label} onChange={e=>setFeature(i,{label:e.target.value})}/></Field><div className="grid gap-2 md:grid-cols-2">{TIERS.map(t=><div className="rounded border p-2" key={t}><label className="flex items-center gap-2 text-xs font-semibold"><input type="checkbox" checked={feature.values[t].included} onChange={e=>setFeature(i,{values:{...feature.values,[t]:{...feature.values[t],included:e.target.checked}}})}/>{tierLabel(t)} includes</label><Input className="mt-2" value={feature.values[t].value} placeholder="Included detail (optional)" onChange={e=>setFeature(i,{values:{...feature.values,[t]:{...feature.values[t],value:e.target.value}}})}/></div>)}</div></div>}/>
+     {layout==="multi-day"&&<div className="grid gap-4 md:grid-cols-2">{TIERS.map(t=><SortableRows key={t} title={`${tierLabel(t)} stays`} rows={state.stays[t]} onAdd={()=>patch("stays",{...state.stays,[t]:[...state.stays[t],blankStay()]})} onMove={(i,d)=>patch("stays",{...state.stays,[t]:move(state.stays[t],i,d)})} onRemove={i=>patch("stays",{...state.stays,[t]:state.stays[t].filter((_,n)=>n!==i)})} render={(stay,i)=><div className="grid gap-2"><Field label="Nights covered"><Input value={stay.nights.join(",")} placeholder="1, 2" onChange={e=>patch("stays",{...state.stays,[t]:state.stays[t].map((s,n)=>n===i?{...s,nights:e.target.value.split(",").map(Number).filter(Boolean)}:s)})}/></Field><Field label="Name"><Input value={stay.name} onChange={e=>patch("stays",{...state.stays,[t]:state.stays[t].map((s,n)=>n===i?{...s,name:e.target.value}:s)})}/></Field><Field label="Type"><Input value={stay.type} onChange={e=>patch("stays",{...state.stays,[t]:state.stays[t].map((s,n)=>n===i?{...s,type:e.target.value}:s)})}/></Field><Field label="Board"><Input value={stay.board} onChange={e=>patch("stays",{...state.stays,[t]:state.stays[t].map((s,n)=>n===i?{...s,board:e.target.value}:s)})}/></Field></div>}/>)}</div>}
+    </>}
+    {state.pricingModel==="quote"&&<p className="rounded bg-[#f7f7f7] p-3 text-sm">The customer will request a quote; no fixed price will be shown.</p>}
+    <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={state.transferAddon} onChange={e=>patch("transferAddon",e.target.checked)}/> Offer airport transfer add-on</label>{state.transferAddon&&<div className="grid grid-cols-2 gap-3"><Field label="Arrival transfer (€)"><Input type="number" value={state.transferPrices.arrival} onChange={e=>patch("transferPrices",{...state.transferPrices,arrival:e.target.value})}/></Field><Field label="Departure transfer (€)"><Input type="number" value={state.transferPrices.departure} onChange={e=>patch("transferPrices",{...state.transferPrices,departure:e.target.value})}/></Field></div>}
+    <Field label="Operating days"><CheckOptions options={WEEKDAYS} selected={state.operatingDays} onToggle={v=>toggleArray("operatingDays",v)}/></Field><StringList title="Start times" items={state.startTimes} onAdd={()=>addToList("startTimes")} onEdit={(i,v)=>listEdit("startTimes",i,v)} onRemove={i=>removeList("startTimes",i)}/><StringList title="Blackout dates" items={state.blackoutDates} onAdd={()=>addToList("blackoutDates")} onEdit={(i,v)=>listEdit("blackoutDates",i,v)} onRemove={i=>removeList("blackoutDates",i)}/><Field label="Seasonality note"><Textarea value={state.seasonality} onChange={e=>patch("seasonality",e.target.value)}/></Field>
+    <div className="rounded-sm border p-3"><h3 className="font-semibold">Live pricing preview</h3>{state.pricingModel==="offers"?<div className="mt-2 grid gap-2 md:grid-cols-2">{TIERS.map(t=><div className={cn("rounded border p-3",state.recommendedTier===t&&"border-[#67B500] bg-[#f5faf3]")} key={t}><p className="font-semibold">{tierLabel(t)}{state.recommendedTier===t?" · Selected":""}</p><p className="text-xl font-bold text-gray-900">{state.prices[t]?`${state.prices[t]} € adult`:"—"}</p>{state.childAllowed&&<p className="text-sm text-[#555]">{state.childPrices[t]?`${state.childPrices[t]} € child`:"Child price —"}</p>}<p className="text-xs text-[#777]">{state.taglines[t]}</p></div>)}</div>:<p className="mt-2 text-sm">{state.pricingModel==="quote"?"Quote on request":`${state.prices.standard||"—"} € adult${state.childAllowed?` · ${state.childPrices.standard||"—"} € child`:""} / ${state.priceUnit}`}</p>}</div>
+   </div>}
+   {step===6&&<div className="grid gap-5">
+    <div className="rounded bg-[#f6faf4] p-3 text-sm">JPEG, PNG, WebP · up to 10 MB each · maximum 12 images · recommend 1200×800 or larger and at least 5. Images are resized to 1600px max edge and compressed as JPEG.</div><p className="text-sm text-[#555]">No text overlays or watermarks; use photos that show the real experience.</p>
+    <div onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();void importFiles(e.dataTransfer.files);}} className="grid min-h-36 place-items-center rounded border-2 border-dashed p-5 text-center"><div><Upload className="mx-auto mb-2 text-gray-900"/><p className="text-sm">Drag and drop photos here</p><Button type="button" variant="outline" className="mt-2" onClick={()=>fileRef.current?.click()}><ImagePlus className="mr-2 h-4 w-4"/>Choose files</Button><input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" onChange={e=>void importFiles(e.target.files)}/></div></div>
+    {error&&<p role="alert" className="text-sm text-red-600">{error}</p>}
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{state.media.map((image,i)=><article key={image.id} className="overflow-hidden rounded-sm border"><div className="relative h-40 bg-[#f2f2f2]">{image.src&&<img src={image.src} alt={image.alt||""} className="h-full w-full object-cover"/>}<span className="absolute left-2 top-2 rounded bg-white px-2 py-1 text-[11px] font-semibold">{state.coverId===image.id?"COVER":"IMAGE"}</span><div className="absolute right-2 top-2 flex gap-1"><button aria-label="Move image left" disabled={i===0} onClick={()=>patch("media",move(state.media,i,-1))} className="rounded bg-white p-1 disabled:opacity-40"><ArrowLeft size={14}/></button><button aria-label="Move image right" disabled={i===state.media.length-1} onClick={()=>patch("media",move(state.media,i,1))} className="rounded bg-white p-1 disabled:opacity-40"><ArrowRight size={14}/></button><button aria-label="Delete image" onClick={()=>void deletePhoto(image.id)} className="rounded bg-white p-1 text-red-600"><Trash2 size={14}/></button></div></div><div className="grid gap-2 p-3"><label className="flex gap-2 text-xs"><input type="radio" name="product-cover" checked={state.coverId===image.id} onChange={()=>patch("coverId",image.id)}/> Set as cover</label><Input value={image.alt} maxLength={180} placeholder={state.coverId===image.id?"Cover alt text (required)":"Alt text"} onChange={e=>updateMedia(image.id,"alt",e.target.value)}/>{state.coverId!==image.id&&!image.alt&&<p className="text-[11px] text-amber-700">Alt text recommended.</p>}<Input value={image.caption} placeholder="Caption (optional)" onChange={e=>updateMedia(image.id,"caption",e.target.value)}/></div></article>)}</div>
+   </div>}
+   {step===9&&<div className="grid gap-5">
+    <div className="grid gap-4 md:grid-cols-2"><Field label="English slug" hint="3–6 words recommended"><Input value={state.slug} onChange={e=>patch("slug",slugify(e.target.value))}/></Field><Field label="Canonical URL (generated)"><Input readOnly value={previewUrl} className="bg-[#f7f7f7]"/></Field><Field label="Meta title" hint={`${state.metaTitle.length}/60`}><Input maxLength={60} value={state.metaTitle} onChange={e=>patch("metaTitle",e.target.value)}/></Field><Field label="Meta description" hint={`${state.metaDescription.length}/155`}><Textarea maxLength={155} value={state.metaDescription} onChange={e=>patch("metaDescription",e.target.value)}/></Field><Field label="Primary keyword"><Input value={state.primaryKeyword} onChange={e=>patch("primaryKeyword",e.target.value)}/></Field><div><StringList title="Secondary keywords (up to 5)" items={state.secondaryKeywords} max={5} onAdd={()=>addToList("secondaryKeywords")} onEdit={(i,v)=>listEdit("secondaryKeywords",i,v)} onRemove={i=>removeList("secondaryKeywords",i)}/></div></div>
+    <Field label="Open Graph image"><ImageSelect media={state.media} value={state.ogImageId||state.coverId} onChange={v=>patch("ogImageId",v)}/></Field><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={state.noindex} onChange={e=>patch("noindex",e.target.checked)}/> Noindex this product (off by default)</label>
+    <Field label="Related tours (manual picks, max 3)"><div className="grid gap-2 sm:grid-cols-2">{readProducts().filter(([id])=>id!==productId).slice(0,12).map(([id,p])=><label key={id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={state.relatedTours.includes(id)} disabled={!state.relatedTours.includes(id)&&state.relatedTours.length>=3} onChange={()=>toggleArray("relatedTours",id)}/>{p.title||id}</label>)}</div></Field>
+    <div className="grid gap-4 lg:grid-cols-2"><div className="rounded border p-4"><p className="text-xs font-semibold uppercase text-[#777]">Search result preview · Desktop</p><p className="mt-3 text-lg text-[#1a0dab]">{state.metaTitle||state.title||"Product title"}</p><p className="text-xs text-gray-900">toledanoviajes.com{previewUrl}</p><p className="mt-1 text-sm">{state.metaDescription||"Your meta description appears here."}</p></div><div className="max-w-sm rounded border p-4"><p className="text-xs font-semibold uppercase text-[#777]">Mobile preview</p><p className="mt-3 truncate text-[#1a0dab]">{state.metaTitle||state.title||"Product title"}</p><p className="truncate text-xs text-gray-900">toledanoviajes.com{previewUrl}</p><p className="mt-1 line-clamp-2 text-sm">{state.metaDescription||"Your meta description appears here."}</p></div></div>
+    <details className="rounded border"><summary className="cursor-pointer p-3 text-sm font-semibold">Read-only JSON-LD preview</summary><pre className="max-h-72 overflow-auto whitespace-pre-wrap bg-[#f7f7f7] p-3 text-xs">{JSON.stringify(seoJsonLd,null,2)}</pre></details>
+    {readProducts().some(([id,p])=>id!==productId&&p.slug===state.slug&&state.slug)&&<p className="text-sm text-amber-700">This slug is already used by another saved product.</p>}
+    <div className="rounded border p-4"><p className="text-sm font-semibold">Review and publish</p><p className="mt-1 text-xs text-[#777]">Use the Review step to resolve missing items before publishing.</p><Field label="Status"><Select value={state.status} onValueChange={v=>patch("status",v as ProductDraft["status"])}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{["Draft","Ready","Published locally","Hidden"].map(v=><SelectItem value={v} key={v} disabled={v==="Ready"&&!isReady}>{v}</SelectItem>)}</SelectContent></Select></Field><div className="mt-3 flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={preview}><Eye className="mr-2 h-4 w-4"/>Preview</Button><Button type="button" variant="outline" onClick={duplicate}><Copy className="mr-2 h-4 w-4"/>Duplicate</Button><Button type="button" variant="outline" onClick={downloadJson}><Download className="mr-2 h-4 w-4"/>Export JSON</Button><Button type="button" disabled={!isReady} onClick={publish}>Publish product</Button></div></div>
+   </div>}
+   {step===7&&<div className="grid gap-5"><p className="text-sm text-[#555]">FAQ content is entered in English. Add at least 3 questions for stronger coverage. Suggestions vary by layout and are never inserted automatically.</p><div className="flex flex-wrap gap-2">{faqSuggestions(layout).map(q=><Button key={q} type="button" variant="outline" size="sm" onClick={()=>patch("faq",[...state.faq,{id:uid(),question:q,answer:""}])}>+ {q}</Button>)}</div><SortableRows title="Frequently asked questions" rows={state.faq} onAdd={()=>patch("faq",[...state.faq,{id:uid(),question:"",answer:""}])} onMove={(i,d)=>patch("faq",move(state.faq,i,d))} onRemove={i=>patch("faq",state.faq.filter((_,n)=>n!==i))} render={(faq,i)=><div className="grid gap-3"><Field label={`Question ${i+1}`}><Input value={faq.question} onChange={e=>patch("faq",state.faq.map((f,n)=>n===i?{...f,question:e.target.value}:f))}/></Field><Field label="Answer"><Textarea rows={3} value={faq.answer} onChange={e=>patch("faq",state.faq.map((f,n)=>n===i?{...f,answer:e.target.value}:f))}/></Field></div>}/></div>}
+   {step===8&&<div className="grid gap-5">
+    <div className="grid gap-3">{stepChecks().map(([ok,label],i)=><div key={label} className="flex items-center justify-between rounded border p-3"><div className="flex items-center gap-3"><span className={cn("grid h-6 w-6 place-items-center rounded-full text-xs",ok?"bg-[#eaf4e6] text-gray-900":"bg-[#fff1e8] text-[#a94d00]")}>{ok?<Check size={14}/>:"!"}</span><span className="text-sm">{label}</span></div><div className="flex items-center gap-3"><span className={cn("text-xs font-semibold",ok?"text-gray-900":"text-[#a94d00]")}>{ok?"PASS":"NEEDS WORK"}</span><Button type="button" variant="outline" size="sm" onClick={()=>go(i)}>Fix</Button></div></div>)}</div>
+    <div className="rounded border p-4"><h3 className="font-semibold">English content</h3><p className="mt-1 text-sm text-[#555]">{Number(Boolean(state.title&&state.summary&&state.paragraphs.some(Boolean)&&state.highlights.some(Boolean)))*100}% complete. SEO is handled in the final step.</p></div>
+   </div>}
+  </section>
+  {error&&step!==6&&<p role="alert" className="rounded bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+  <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex gap-2">{step>0&&<Button type="button" variant="outline" onClick={()=>go(step-1)}><ArrowLeft className="mr-2 h-4 w-4"/>Back</Button>}<Button type="button" variant="ghost" onClick={()=>{const raw=localStorage.getItem(STORAGE_KEY);let all:Record<string,ProductDraft>={};try{all=raw?JSON.parse(raw):{};}catch{}all[productId]={...state,media:state.media.map(({src,...m})=>m)};localStorage.setItem(STORAGE_KEY,JSON.stringify(all));setDirty(false);toast.success("Draft saved.");}}><Save className="mr-2 h-4 w-4"/>Save draft</Button></div>{step<9?<Button type="button" onClick={()=>go(step+1)}>Next<ArrowRight className="ml-2 h-4 w-4"/></Button>:<Button type="button" onClick={()=>router.push("/partner/dashboard/products")}>Back to products</Button>}</div>
+ </div>;
 }
 
-/* ------------------------------ Component --------------------------- */
-
-export default function ProductForm() {
-  const router = useRouter();
-  const [step, setStep] = React.useState(0);
-  const [state, setState] = React.useState<FormState>(initialState);
-  const [errors, setErrors] = React.useState<Record<string, string>>({});
-  const [slugTouched, setSlugTouched] = React.useState(false);
-  const [dragOver, setDragOver] = React.useState(false);
-
-  const fileRef = React.useRef<HTMLInputElement>(null);
-
-  // Slug automático: slug de la ciudad + título
-  React.useEffect(() => {
-    if (slugTouched || !state.title || !state.city) return;
-    const citySlug = slugify(state.city);
-    setState((s) => ({ ...s, slug: `${citySlug}-${slugify(s.title)}` }));
-  }, [state.title, state.city, slugTouched]);
-
-  const citySlug = state.city ? slugify(state.city) : "ciudad";
-  const previewUrl = `/${citySlug}-tours/${state.slug || "…"}`;
-
-  function patch<K extends keyof FormState>(key: K, value: FormState[K]) {
-    setState((s) => ({ ...s, [key]: value }));
-    setErrors((e) => {
-      if (!e[key]) return e;
-      const next = { ...e };
-      delete next[key];
-      return next;
-    });
-  }
-
-  const stepSchemas = [
-    productStep1Schema,
-    productStep2Schema,
-    productStep3Schema,
-    productStep4Schema,
-    productStep5Schema,
-    productStep6Schema,
-  ];
-
-  function validateCurrentStep(): boolean {
-    const parsed = stepSchemas[step].safeParse(state);
-    if (parsed.success) {
-      setErrors({});
-      return true;
-    }
-    const map: Record<string, string> = {};
-    for (const issue of parsed.error.issues) {
-      const key = String(issue.path[0]);
-      if (!map[key]) map[key] = issue.message;
-    }
-    setErrors(map);
-    toast.error("Revisa los campos marcados", {
-      description: `${Object.keys(map).length} campo(s) con error en «${STEPS[step]}»`,
-    });
-    return false;
-  }
-
-  function goNext() {
-    if (!validateCurrentStep()) return;
-    setErrors({});
-    setStep((s) => Math.min(s + 1, STEPS.length - 1));
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function goBack() {
-    setErrors({});
-    setStep((s) => Math.max(s - 1, 0));
-  }
-
-  function publish() {
-    const parsed = productStep6Schema.safeParse(state);
-    if (!parsed.success) {
-      setErrors({ terms: parsed.error.issues[0].message });
-      return;
-    }
-    toast.success("Producto publicado", {
-      description: previewUrl,
-    });
-    router.push("/partner/dashboard/products");
-  }
-
-  function saveDraft() {
-    toast.success("Borrador guardado", {
-      description: `«${state.title || "Producto sin título"}» guardado sin validar.`,
-    });
-    router.push("/partner/dashboard/products");
-  }
-
-  /* ------------------------------ Fotos ------------------------------ */
-
-  function addFiles(files: FileList | null) {
-    if (!files?.length) return;
-    const next: Photo[] = Array.from(files).map((f) => ({
-      id: uid(),
-      url: URL.createObjectURL(f),
-      name: f.name,
-    }));
-    setState((s) => {
-      const photos = [...s.photos, ...next];
-      return {
-        ...s,
-        photos,
-        coverId: s.coverId || photos[0]?.id || "",
-      };
-    });
-    setErrors((e) => {
-      const copy = { ...e };
-      delete copy.photos;
-      delete copy.coverId;
-      return copy;
-    });
-  }
-
-  function removePhoto(id: string) {
-    setState((s) => {
-      const photos = s.photos.filter((p) => p.id !== id);
-      const coverId = s.coverId === id ? photos[0]?.id ?? "" : s.coverId;
-      return { ...s, photos, coverId };
-    });
-  }
-
-  /* ---------------------------- Itinerario --------------------------- */
-
-  function updateRow(list: ItineraryRow[], id: string, key: keyof ItineraryRow, value: string) {
-    return list.map((r) => (r.id === id ? { ...r, [key]: value } : r));
-  }
-
-  function moveRow(list: ItineraryRow[], index: number, dir: -1 | 1) {
-    const target = index + dir;
-    if (target < 0 || target >= list.length) return list;
-    const copy = [...list];
-    [copy[index], copy[target]] = [copy[target], copy[index]];
-    return copy;
-  }
-
-  /* ------------------------------ Render ----------------------------- */
-
-  return (
-    <div className="flex flex-col gap-6">
-      {/* Barra de progreso */}
-      <div className="rounded-sm border border-[#E5E5E5] bg-white p-5">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-[#1A1A1A]">
-            Paso {step + 1} de {STEPS.length} · {STEPS[step]}
-          </p>
-          <p className="text-xs text-[#999]">{Math.round(((step + 1) / STEPS.length) * 100)} %</p>
-        </div>
-
-        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#E5E5E5]">
-          <div
-            className="h-full rounded-full bg-[#66B600] transition-all duration-300"
-            style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
-            role="progressbar"
-            aria-valuenow={step + 1}
-            aria-valuemin={1}
-            aria-valuemax={STEPS.length}
-            aria-label="Progreso del formulario"
-          />
-        </div>
-
-        <ol className="mt-4 hidden grid-cols-6 gap-2 md:grid">
-          {STEPS.map((label, i) => (
-            <li key={label} className="flex flex-col gap-1.5">
-              <span
-                className={cn(
-                  "flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold",
-                  i < step
-                    ? "bg-[#66B600] text-white"
-                    : i === step
-                      ? "bg-[#1A1A1A] text-white"
-                      : "bg-[#E5E5E5] text-[#999]",
-                )}
-              >
-                {i < step ? <Check className="h-3.5 w-3.5" /> : i + 1}
-              </span>
-              <span
-                className={cn(
-                  "text-[11px] leading-tight",
-                  i === step ? "font-semibold text-[#1A1A1A]" : "text-[#999]",
-                )}
-              >
-                {label}
-              </span>
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      {/* Contenido */}
-      <div className="rounded-sm border border-[#E5E5E5] bg-white p-5 md:p-6">
-        {/* -------- Paso 1 -------- */}
-        {step === 0 ? (
-          <div className="flex flex-col gap-5">
-            <Field label="Título del producto" error={errors.title} required>
-              <Input
-                value={state.title}
-                onChange={(e) => patch("title", e.target.value)}
-                placeholder="Ej.: Medina de Marrakech: tour gastronómico al atardecer"
-                className="h-12"
-              />
-            </Field>
-
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <Field label="Ciudad" error={errors.city} required>
-                <Select value={state.city} onValueChange={(v) => patch("city", v)}>
-                  <SelectTrigger className="h-12" aria-label="Ciudad">
-                    <SelectValue placeholder="Selecciona una ciudad" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CITIES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field label="Categoría" error={errors.category} required>
-                <Select value={state.category} onValueChange={(v) => patch("category", v)}>
-                  <SelectTrigger className="h-12" aria-label="Categoría">
-                    <SelectValue placeholder="Selecciona una categoría" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            </div>
-
-            <Field
-              label="Descripción corta"
-              error={errors.shortDescription}
-              required
-              hint={`${state.shortDescription.length}/200 caracteres`}
-            >
-              <Textarea
-                rows={2}
-                value={state.shortDescription}
-                onChange={(e) => patch("shortDescription", e.target.value)}
-                placeholder="Resumen que aparecerá en las tarjetas de búsqueda…"
-              />
-            </Field>
-
-            <Field label="Descripción larga" error={errors.longDescription} required>
-              <Textarea
-                rows={6}
-                value={state.longDescription}
-                onChange={(e) => patch("longDescription", e.target.value)}
-                placeholder="Cuenta la experiencia con detalle: qué verán, cómo se vive, para quién es…"
-              />
-            </Field>
-          </div>
-        ) : null}
-
-        {/* -------- Paso 2 -------- */}
-        {step === 1 ? (
-          <div className="flex flex-col gap-5">
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <Field label="Duración" error={errors.duration} required>
-                <Input
-                  value={state.duration}
-                  onChange={(e) => patch("duration", e.target.value)}
-                  placeholder="Ej.:3 horas"
-                  className="h-12"
-                />
-              </Field>
-
-              <Field label="Tamaño máximo del grupo" error={errors.groupSize} required>
-                <Input
-                  type="number"
-                  min={1}
-                  value={state.groupSize}
-                  onChange={(e) => patch("groupSize", e.target.value)}
-                  className="h-12"
-                />
-              </Field>
-            </div>
-
-            <Field label="Idiomas" error={errors.languages} required>
-              <div className="flex flex-wrap gap-2">
-                {LANGUAGES.map((lang) => {
-                  const active = state.languages.includes(lang);
-                  return (
-                    <button
-                      key={lang}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() =>
-                        patch(
-                          "languages",
-                          active
-                            ? state.languages.filter((l) => l !== lang)
-                            : [...state.languages, lang],
-                        )
-                      }
-                      className={cn(
-                        "rounded-sm border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600]",
-                        active
-                          ? "border-[#66B600] bg-[#EAF6D6] text-[#3D7A00]"
-                          : "border-[#E5E5E5] text-[#444] hover:bg-[#F7F7F7]",
-                      )}
-                    >
-                      {lang}
-                    </button>
-                  );
-                })}
-              </div>
-            </Field>
-
-            <Field label="Punto de recogida" error={errors.pickup} required>
-              <Input
-                value={state.pickup}
-                onChange={(e) => patch("pickup", e.target.value)}
-                placeholder="Ej.: Hotel Riad Yasmine, Medina"
-                className="h-12"
-              />
-            </Field>
-
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <TagList
-                label="Incluye"
-                required
-                error={errors.includes}
-                items={state.includes}
-                onAdd={(tag) => patch("includes", [...state.includes, tag])}
-                onRemove={(tag) =>
-                  patch(
-                    "includes",
-                    state.includes.filter((i) => i !== tag),
-                  )
-                }
-                placeholder="Ej.: Guía local"
-              />
-              <TagList
-                label="No incluye"
-                required
-                error={errors.excludes}
-                items={state.excludes}
-                onAdd={(tag) => patch("excludes", [...state.excludes, tag])}
-                onRemove={(tag) =>
-                  patch(
-                    "excludes",
-                    state.excludes.filter((i) => i !== tag),
-                  )
-                }
-                placeholder="Ej.: Propinas"
-              />
-            </div>
-
-            {/* Itinerario */}
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-medium text-[#222]">
-                  Itinerario <span className="text-[#D93025]">*</span>
-                </Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 gap-1.5 text-xs"
-                  onClick={() =>
-                    patch("itinerary", [
-                      ...state.itinerary,
-                      { id: uid(), time: "", title: "", description: "" },
-                    ])
-                  }
-                >
-                  <Plus className="h-3.5 w-3.5" /> Añadir tramo
-                </Button>
-              </div>
-
-              {errors.itinerary ? (
-                <p role="alert" className="text-xs font-medium text-[#D93025]">
-                  {errors.itinerary}
-                </p>
-              ) : null}
-
-              <div className="flex flex-col gap-3">
-                {state.itinerary.map((row, i) => (
-                  <div
-                    key={row.id}
-                    className="rounded-sm border border-[#E5E5E5] bg-[#FBFBFB] p-3"
-                  >
-                    <div className="flex items-center gap-2">
-                      <GripVertical className="h-4 w-4 shrink-0 text-[#BBB]" aria-hidden />
-                      <span className="text-xs font-semibold text-[#999]">#{i + 1}</span>
-                      <div className="ml-auto flex items-center gap-1">
-                        <button
-                          type="button"
-                          aria-label="Subir tramo"
-                          disabled={i === 0}
-                          onClick={() => patch("itinerary", moveRow(state.itinerary, i, -1))}
-                          className="flex h-7 w-7 items-center justify-center rounded-sm text-[#666] hover:bg-white disabled:opacity-30"
-                        >
-                          <ArrowRight className="h-3.5 w-3.5 -rotate-90" />
-                        </button>
-                        <button
-                          type="button"
-                          aria-label="Bajar tramo"
-                          disabled={i === state.itinerary.length - 1}
-                          onClick={() => patch("itinerary", moveRow(state.itinerary, i, 1))}
-                          className="flex h-7 w-7 items-center justify-center rounded-sm text-[#666] hover:bg-white disabled:opacity-30"
-                        >
-                          <ArrowRight className="h-3.5 w-3.5 rotate-90" />
-                        </button>
-                        <button
-                          type="button"
-                          aria-label="Eliminar tramo"
-                          disabled={state.itinerary.length <= 2}
-                          onClick={() =>
-                            patch(
-                              "itinerary",
-                              state.itinerary.filter((r) => r.id !== row.id),
-                            )
-                          }
-                          className="flex h-7 w-7 items-center justify-center rounded-sm text-[#D93025] hover:bg-white disabled:opacity-30"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[120px_1fr]">
-                      <Input
-                        type="time"
-                        value={row.time}
-                        aria-label={`Hora del tramo ${i + 1}`}
-                        onChange={(e) =>
-                          patch(
-                            "itinerary",
-                            updateRow(state.itinerary, row.id, "time", e.target.value),
-                          )
-                        }
-                        className="h-10"
-                      />
-                      <Input
-                        value={row.title}
-                        aria-label={`Título del tramo ${i + 1}`}
-                        placeholder="Título del tramo"
-                        onChange={(e) =>
-                          patch(
-                            "itinerary",
-                            updateRow(state.itinerary, row.id, "title", e.target.value),
-                          )
-                        }
-                        className="h-10"
-                      />
-                    </div>
-                    <Textarea
-                      rows={2}
-                      value={row.description}
-                      aria-label={`Descripción del tramo ${i + 1}`}
-                      placeholder="Descripción…"
-                      onChange={(e) =>
-                        patch(
-                          "itinerary",
-                          updateRow(state.itinerary, row.id, "description", e.target.value),
-                        )
-                      }
-                      className="mt-2"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {/* -------- Paso 3 -------- */}
-        {step === 2 ? (
-          <div className="flex flex-col gap-5">
-            <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragOver(true);
-              }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragOver(false);
-                addFiles(e.dataTransfer.files);
-              }}
-              className={cn(
-                "flex flex-col items-center justify-center gap-3 rounded-sm border-2 border-dashed px-6 py-12 text-center transition-colors",
-                dragOver
-                  ? "border-[#66B600] bg-[#EAF6D6]"
-                  : "border-[#E5E5E5] bg-[#FBFBFB]",
-              )}
-            >
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white">
-                <Upload className="h-5 w-5 text-[#999]" aria-hidden />
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-[#1A1A1A]">
-                  Arrastra y suelta tus fotos aquí
-                </p>
-                <p className="mt-1 text-xs text-[#666]">
-                  JPG o PNG, mínimo1 foto. La portada se elige debajo.
-                </p>
-              </div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="sr-only"
-                onChange={(e) => addFiles(e.target.files)}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => fileRef.current?.click()}
-                className="h-10 gap-2"
-              >
-                <ImageIcon className="h-4 w-4" /> Seleccionar archivos
-              </Button>
-            </div>
-
-            {errors.photos ? (
-              <p role="alert" className="text-xs font-medium text-[#D93025]">
-                {errors.photos}
-              </p>
-            ) : null}
-            {errors.coverId ? (
-              <p role="alert" className="text-xs font-medium text-[#D93025]">
-                {errors.coverId}
-              </p>
-            ) : null}
-
-            {state.photos.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {state.photos.map((photo) => {
-                  const isCover = state.coverId === photo.id;
-                  return (
-                    <div
-                      key={photo.id}
-                      className={cn(
-                        "group relative overflow-hidden rounded-sm border-2",
-                        isCover ? "border-[#66B600]" : "border-[#E5E5E5]",
-                      )}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photo.url}
-                        alt={photo.name}
-                        className="h-28 w-full object-cover"
-                      />
-                      <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-black/60 px-2 py-1.5">
-                        <button
-                          type="button"
-                          onClick={() => patch("coverId", photo.id)}
-                          className={cn(
-                            "text-[10px] font-bold uppercase tracking-wide",
-                            isCover ? "text-[#8CD400]" : "text-white/80 hover:text-white",
-                          )}
-                        >
-                          {isCover ? "Portada" : "Hacer portada"}
-                        </button>
-                        <button
-                          type="button"
-                          aria-label={`Eliminar ${photo.name}`}
-                          onClick={() => removePhoto(photo.id)}
-                          className="text-white/80 transition-colors hover:text-[#FF8A80]"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        {/* -------- Paso 4 -------- */}
-        {step === 3 ? (
-          <div className="flex flex-col gap-5">
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-              <Field label="Precio por adulto (€)" error={errors.priceAdult} required>
-                <Input
-                  type="number"
-                  min={0}
-                  value={state.priceAdult}
-                  onChange={(e) => patch("priceAdult", e.target.value)}
-                  placeholder="49"
-                  className="h-12"
-                />
-              </Field>
-              <Field label="Precio por niño (€)" error={errors.priceChild} required>
-                <Input
-                  type="number"
-                  min={0}
-                  value={state.priceChild}
-                  onChange={(e) => patch("priceChild", e.target.value)}
-                  placeholder="29"
-                  className="h-12"
-                />
-              </Field>
-              <Field label="Moneda" required>
-                <Input value="EUR" disabled className="h-12 bg-[#F7F7F7]" readOnly />
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <Field label="Capacidad por salida" error={errors.capacity} required>
-                <Input
-                  type="number"
-                  min={1}
-                  value={state.capacity}
-                  onChange={(e) => patch("capacity", e.target.value)}
-                  className="h-12"
-                />
-              </Field>
-              <Field label="Límite de reserva (cutoff)" error={errors.cutoffTime} required>
-                <Input
-                  type="time"
-                  value={state.cutoffTime}
-                  onChange={(e) => patch("cutoffTime", e.target.value)}
-                  className="h-12"
-                />
-              </Field>
-            </div>
-
-            <Field label="Días de la semana" error={errors.daysOfWeek} required>
-              <div className="flex flex-wrap gap-2">
-                {WEEK_DAYS.map((day) => {
-                  const active = state.daysOfWeek.includes(day);
-                  return (
-                    <button
-                      key={day}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() =>
-                        patch(
-                          "daysOfWeek",
-                          active
-                            ? state.daysOfWeek.filter((d) => d !== day)
-                            : [...state.daysOfWeek, day],
-                        )
-                      }
-                      className={cn(
-                        "h-10 w-14 rounded-sm border text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600]",
-                        active
-                          ? "border-[#66B600] bg-[#EAF6D6] text-[#3D7A00]"
-                          : "border-[#E5E5E5] text-[#444] hover:bg-[#F7F7F7]",
-                      )}
-                    >
-                      {day}
-                    </button>
-                  );
-                })}
-              </div>
-            </Field>
-
-            <Field
-              label="Política de cancelación"
-              error={errors.cancellationPolicy}
-              required
-            >
-              <Select
-                value={state.cancellationPolicy}
-                onValueChange={(v) => patch("cancellationPolicy", v)}
-              >
-                <SelectTrigger className="h-12" aria-label="Política de cancelación">
-                  <SelectValue placeholder="Selecciona una política" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CANCELLATION_POLICIES.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
-        ) : null}
-
-        {/* -------- Paso 5 -------- */}
-        {step === 4 ? (
-          <div className="flex flex-col gap-5">
-            <Field label="Slug (URL)" error={errors.slug} required hint="Se genera automáticamente">
-              <Input
-                value={state.slug}
-                onChange={(e) => {
-                  setSlugTouched(true);
-                  patch("slug", e.target.value);
-                }}
-                className="h-12 font-mono text-sm"
-              />
-            </Field>
-
-            <div className="rounded-sm border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#999]">
-                Vista previa de la URL
-              </p>
-              <p className="mt-1 break-all font-mono text-sm text-[#3D7A00]">{previewUrl}</p>
-            </div>
-
-            <Field
-              label="Meta descripción"
-              error={errors.metaDescription}
-              required
-              hint={`${state.metaDescription.length}/160 caracteres`}
-            >
-              <Textarea
-                rows={3}
-                value={state.metaDescription}
-                onChange={(e) => patch("metaDescription", e.target.value)}
-                placeholder="Descripción para los buscadores…"
-              />
-            </Field>
-
-            {/* FAQ */}
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs font-medium text-[#222]">
-                  Preguntas frecuentes <span className="text-[#D93025]">*</span>
-                </Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 gap-1.5 text-xs"
-                  onClick={() =>
-                    patch("faq", [...state.faq, { id: uid(), question: "", answer: "" }])
-                  }
-                >
-                  <Plus className="h-3.5 w-3.5" /> Añadir pregunta
-                </Button>
-              </div>
-
-              {errors.faq ? (
-                <p role="alert" className="text-xs font-medium text-[#D93025]">
-                  {errors.faq}
-                </p>
-              ) : null}
-
-              {state.faq.map((row, i) => (
-                <div key={row.id} className="flex flex-col gap-2 rounded-sm border border-[#E5E5E5] p-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-[#999]">FAQ {i + 1}</span>
-                    <button
-                      type="button"
-                      aria-label={`Eliminar pregunta ${i + 1}`}
-                      disabled={state.faq.length <= 1}
-                      onClick={() =>
-                        patch(
-                          "faq",
-                          state.faq.filter((r) => r.id !== row.id),
-                        )
-                      }
-                      className="ml-auto flex h-7 w-7 items-center justify-center rounded-sm text-[#D93025] hover:bg-[#FDECEC] disabled:opacity-30"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <Input
-                    value={row.question}
-                    aria-label={`Pregunta ${i + 1}`}
-                    placeholder="¿Hay que llevar documentación?"
-                    onChange={(e) =>
-                      patch(
-                        "faq",
-                        state.faq.map((r) => (r.id === row.id ? { ...r, question: e.target.value } : r)),
-                      )
-                    }
-                    className="h-10"
-                  />
-                  <Textarea
-                    rows={2}
-                    value={row.answer}
-                    aria-label={`Respuesta ${i + 1}`}
-                    placeholder="Respuesta…"
-                    onChange={(e) =>
-                      patch(
-                        "faq",
-                        state.faq.map((r) => (r.id === row.id ? { ...r, answer: e.target.value } : r)),
-                      )
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {/* -------- Paso 6 -------- */}
-        {step === 5 ? (
-          <div className="flex flex-col gap-5">
-            <ReviewSection title="Información básica">
-              <ReviewRow label="Título" value={state.title || "—"} />
-              <ReviewRow label="Ciudad" value={state.city || "—"} />
-              <ReviewRow label="Categoría" value={state.category || "—"} />
-              <ReviewRow label="Descripción corta" value={state.shortDescription || "—"} />
-            </ReviewSection>
-
-            <ReviewSection title="Detalles">
-              <ReviewRow label="Duración" value={state.duration || "—"} />
-              <ReviewRow label="Idiomas" value={state.languages.join(", ") || "—"} />
-              <ReviewRow label="Grupo máximo" value={`${state.groupSize} personas`} />
-              <ReviewRow label="Recogida" value={state.pickup || "—"} />
-              <ReviewRow label="Incluye" value={state.includes.join(", ") || "—"} />
-              <ReviewRow label="No incluye" value={state.excludes.join(", ") || "—"} />
-              <ReviewRow
-                label="Itinerario"
-                value={
-                  state.itinerary.map((r) => `${r.time} ${r.title}`).join(" → ") || "—"
-                }
-              />
-            </ReviewSection>
-
-            <ReviewSection title="Fotos">
-              <ReviewRow label="Fotos" value={`${state.photos.length} imagen(es)`} />
-              <ReviewRow
-                label="Portada"
-                value={
-                  state.photos.find((p) => p.id === state.coverId)?.name ?? "Sin portada"
-                }
-              />
-            </ReviewSection>
-
-            <ReviewSection title="Precios y disponibilidad">
-              <ReviewRow label="Adulto" value={`${state.priceAdult} €`} />
-              <ReviewRow label="Niño" value={`${state.priceChild} €`} />
-              <ReviewRow label="Capacidad" value={`${state.capacity} personas`} />
-              <ReviewRow label="Días" value={state.daysOfWeek.join(", ") || "—"} />
-              <ReviewRow label="Cutoff" value={state.cutoffTime} />
-              <ReviewRow label="Cancelación" value={state.cancellationPolicy || "—"} />
-            </ReviewSection>
-
-            <ReviewSection title="SEO y FAQ">
-              <div className="rounded-sm border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#999]">
-                  URL final
-                </p>
-                <p className="mt-1 break-all font-mono text-sm text-[#3D7A00]">{previewUrl}</p>
-              </div>
-              <ReviewRow label="Meta descripción" value={state.metaDescription || "—"} />
-              <ReviewRow label="FAQ" value={`${state.faq.length} pregunta(s)`} />
-            </ReviewSection>
-
-            <label className="flex cursor-pointer items-start gap-3 rounded-sm border border-[#E5E5E5] bg-[#FBFBFB] p-4">
-              <input
-                type="checkbox"
-                checked={state.terms}
-                onChange={(e) => patch("terms", e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded-sm border-[#E5E5E5] accent-[#66B600] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#66B600]"
-              />
-              <span className="text-sm text-[#444]">
-                Confirmo que los datos del producto son correctos y que cumplen las condiciones
-                de publicación de Nomadica Sahara.
-              </span>
-            </label>
-            {errors.terms ? (
-              <p role="alert" className="text-xs font-medium text-[#D93025]">
-                {errors.terms}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-
-      {/* Navegación */}
-      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-2">
-          {step > 0 ? (
-            <Button type="button" variant="outline" onClick={goBack} className="h-11 gap-2">
-              <ArrowLeft className="h-4 w-4" /> Atrás
-            </Button>
-          ) : null}
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={saveDraft}
-            className="h-11 gap-2 text-[#666]"
-          >
-            <Save className="h-4 w-4" /> Guardar borrador
-          </Button>
-        </div>
-
-        {step < STEPS.length - 1 ? (
-          <Button type="button" onClick={goNext} className="h-11 gap-2">
-            Siguiente <ArrowRight className="h-4 w-4" />
-          </Button>
-        ) : (
-          <Button type="button" onClick={publish} className="h-11 gap-2">
-            <Send className="h-4 w-4" /> Publicar
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ----------------------------- Sub-componentes ----------------------- */
-
-function Field({
-  label,
-  required,
-  error,
-  hint,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  error?: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-baseline justify-between gap-2">
-        <Label className="text-xs font-medium text-[#222]">
-          {label} {required ? <span className="text-[#D93025]">*</span> : null}
-        </Label>
-        {hint ? <span className="text-[11px] text-[#999]">{hint}</span> : null}
-      </div>
-      {children}
-      {error ? (
-        <p role="alert" className="text-xs font-medium text-[#D93025]">
-          {error}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-function TagList({
-  label,
-  items,
-  onAdd,
-  onRemove,
-  placeholder,
-  required,
-  error,
-}: {
-  label: string;
-  items: string[];
-  onAdd: (tag: string) => void;
-  onRemove: (tag: string) => void;
-  placeholder: string;
-  required?: boolean;
-  error?: string;
-}) {
-  const [draft, setDraft] = React.useState("");
-
-  function submit() {
-    const value = draft.trim();
-    if (!value || items.includes(value)) return;
-    onAdd(value);
-    setDraft("");
-  }
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label className="text-xs font-medium text-[#222]">
-        {label} {required ? <span className="text-[#D93025]">*</span> : null}
-      </Label>
-      <div className="flex gap-2">
-        <Input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              submit();
-            }
-          }}
-          placeholder={placeholder}
-          aria-label={`Añadir a ${label}`}
-          className="h-11"
-        />
-        <Button type="button" variant="outline" onClick={submit} className="h-11 px-3">
-          <Plus className="h-4 w-4" />
-          <span className="sr-only">Añadir</span>
-        </Button>
-      </div>
-
-      {items.length > 0 ? (
-        <ul className="mt-1 flex flex-wrap gap-1.5">
-          {items.map((tag) => (
-            <li
-              key={tag}
-              className="flex items-center gap-1 rounded-sm border border-[#E5E5E5] bg-[#EAF6D6] py-1 pl-2.5 pr-1 text-xs font-medium text-[#3D7A00]"
-            >
-              {tag}
-              <button
-                type="button"
-                aria-label={`Quitar ${tag}`}
-                onClick={() => onRemove(tag)}
-                className="flex h-4 w-4 items-center justify-center rounded-sm hover:bg-white/60"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      {error ? (
-        <p role="alert" className="text-xs font-medium text-[#D93025]">
-          {error}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-function ReviewSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-sm border border-[#E5E5E5] p-4">
-      <h3 className="flex items-center gap-2 text-sm font-semibold text-[#1A1A1A]">
-        <CheckCircle2 className="h-4 w-4 text-[#66B600]" aria-hidden />
-        {title}
-      </h3>
-      <dl className="mt-3 flex flex-col gap-2">{children}</dl>
-    </section>
-  );
-}
-
-function ReviewRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-4">
-      <dt className="w-40 shrink-0 text-xs font-medium text-[#999]">{label}</dt>
-      <dd className="text-sm text-[#222]">{value}</dd>
-    </div>
-  );
-}
+function pickupReady(p:ProductDraft){return Boolean(p.pickupType&&(p.pickupType==="none"||(p.pickupType==="hotel"&&p.destination==="Marrakech")||p.pickupPoints.length));}
+function validAgeRanges(p:ProductDraft){const valid=(min:string,max:string)=>Number.isInteger(Number(min))&&Number.isInteger(Number(max))&&Number(min)>=0&&Number(max)<=99&&Number(min)<=Number(max);return valid(p.adultMinAge,p.adultMaxAge)&&(!p.childAllowed||valid(p.childMinAge,p.childMaxAge));}
+function priceValid(p:ProductDraft){if(p.pricingModel==="quote")return true;const valid=(value:string)=>Number.isInteger(Number(value))&&Number(value)>0;if(p.pricingModel==="single")return valid(p.prices.standard)&&(!p.childAllowed||valid(p.childPrices.standard));const [economic,recommended]=TIERS.map(t=>Number(p.prices[t]));const childrenValid=!p.childAllowed||(TIERS.every(t=>valid(p.childPrices[t]))&&Number(p.childPrices.economic)<Number(p.childPrices.standard));const tiersValid=Number.isInteger(economic)&&Number.isInteger(recommended)&&economic>0&&economic<recommended&&childrenValid&&p.features.filter(f=>f.label.trim()).length>=3;const transferValid=!p.transferAddon||[p.transferPrices.arrival,p.transferPrices.departure].every(value=>Number.isInteger(Number(value))&&Number(value)>0);return tiersValid&&transferValid;}
+function faqSuggestions(layout:string){if(layout==="wellness")return ["What should I bring?","How long does the treatment take?","Are there health restrictions?"];if(layout==="multi-day")return ["What is included in the trip?","Where do we stay overnight?","What should I pack?"];if(layout==="service")return ["Where will the driver meet me?","How much luggage can I bring?","Can I change my pickup time?"];return ["Where is the meeting point?","What should I bring?","How long does the activity last?"];}
+function readProducts():[string,Partial<ProductDraft>][]{if(typeof window==="undefined")return[];try{return Object.entries(JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}")) as [string,Partial<ProductDraft>][];}catch{return[];}}
+function Field({label,hint,children}:{label:string;hint?:string;children:React.ReactNode}){return <label className="grid content-start gap-1.5 text-xs font-medium text-[#333]"><span className="flex items-center justify-between gap-2">{label}{hint&&<span className="font-normal text-[#777]">{hint}</span>}</span>{children}</label>;}
+function Hint({children}:{children:React.ReactNode}){return <span className="text-[11px] font-normal text-[#777]">{children}</span>;}
+function AgeRange({label,min,max,onMin,onMax}:{label:string;min:string;max:string;onMin:(value:string)=>void;onMax:(value:string)=>void}){return <fieldset className="grid gap-2"><legend className="text-xs font-semibold text-[#333]">{label}</legend><div className="grid grid-cols-2 gap-2"><label className="grid gap-1 text-[11px] text-[#777]">From<select className="h-10 rounded-sm border border-[#d6d6d6] bg-white px-3 text-sm text-[#222]" value={min} onChange={e=>onMin(e.target.value)}>{Array.from({length:100},(_,i)=><option key={i} value={i}>{i} years</option>)}</select></label><label className="grid gap-1 text-[11px] text-[#777]">To<select className="h-10 rounded-sm border border-[#d6d6d6] bg-white px-3 text-sm text-[#222]" value={max} onChange={e=>onMax(e.target.value)}>{Array.from({length:100},(_,i)=><option key={i} value={i}>{i} years</option>)}</select></label></div></fieldset>;}
+function CheckOptions({options,selected,onToggle}:{options:string[];selected:string[];onToggle:(value:string)=>void}){return <div className="flex flex-wrap gap-2">{options.map(option=><label key={option} className={cn("flex cursor-pointer items-center gap-2 rounded-sm border px-3 py-2 text-xs",selected.includes(option)?"border-[#67B500] bg-[#f3f9f0] text-[#326d25]":"border-[#e0e0e0] text-[#555]")}><input type="checkbox" checked={selected.includes(option)} onChange={()=>onToggle(option)} className="accent-[#67B500]"/>{option}</label>)}</div>;}
+function StringList({title,items,onAdd,onEdit,onRemove,onMove,min,max}:{title:string;items:string[];onAdd:()=>void;onEdit:(index:number,value:string)=>void;onRemove:(index:number)=>void;onMove?:(index:number,direction:-1|1)=>void;min?:number;max?:number}){return <div className="grid gap-2"><div className="flex items-center justify-between"><span className="text-xs font-medium">{title}</span><Button type="button" variant="outline" size="sm" disabled={max!==undefined&&items.length>=max} onClick={onAdd}><Plus className="mr-1 h-3 w-3"/>Add</Button></div>{items.map((item,i)=><div key={i} className="flex gap-2"><Input value={item} onChange={e=>onEdit(i,e.target.value)} aria-label={`${title} ${i+1}`}/>{onMove&&<><button type="button" aria-label="Move up" disabled={i===0} onClick={()=>onMove(i,-1)} className="rounded border px-2 disabled:opacity-30"><ArrowUp size={14}/></button><button type="button" aria-label="Move down" disabled={i===items.length-1} onClick={()=>onMove(i,1)} className="rounded border px-2 disabled:opacity-30"><ArrowDown size={14}/></button></>}<button type="button" aria-label="Remove" disabled={items.length<=(min??0)} onClick={()=>onRemove(i)} className="rounded border px-2 text-red-600 disabled:opacity-30"><Trash2 size={14}/></button></div>)}</div>;}
+function SortableRows<T extends {id:string}>({title,rows,onAdd,onMove,onRemove,render,hideAdd=false}:{title:string;rows:T[];onAdd:()=>void;onMove:(index:number,direction:-1|1)=>void;onRemove:(index:number)=>void;render:(row:T,index:number)=>React.ReactNode;hideAdd?:boolean}){return <div className="grid gap-3"><div className="flex items-center justify-between"><h3 className="text-sm font-semibold">{title}</h3>{!hideAdd&&<Button type="button" variant="outline" size="sm" onClick={onAdd}><Plus className="mr-1 h-3.5 w-3.5"/>Add</Button>}</div>{rows.map((row,i)=><details key={row.id} open={i===0} className="rounded-sm border"><summary className="flex cursor-pointer list-none items-center gap-2 p-3 text-sm font-medium"><span className="mr-auto">{title.replace(/s$/i,"")} {i+1}</span><button type="button" aria-label="Move up" disabled={i===0} onClick={e=>{e.preventDefault();e.stopPropagation();onMove(i,-1);}} className="rounded border p-1 disabled:opacity-30"><ArrowUp size={13}/></button><button type="button" aria-label="Move down" disabled={i===rows.length-1} onClick={e=>{e.preventDefault();e.stopPropagation();onMove(i,1);}} className="rounded border p-1 disabled:opacity-30"><ArrowDown size={13}/></button><button type="button" aria-label="Remove item" onClick={e=>{e.preventDefault();e.stopPropagation();onRemove(i);}} className="rounded border p-1 text-red-600"><Trash2 size={13}/></button></summary><div className="grid gap-3 border-t bg-[#fcfcfc] p-3">{render(row,i)}</div></details>)}</div>;}
+function ImageSelect({media,value,onChange}:{media:MediaItem[];value:string;onChange:(id:string)=>void}){return <Select value={value||"none"} onValueChange={v=>onChange(v==="none"?"":v)}><SelectTrigger><SelectValue placeholder="Choose gallery image"/></SelectTrigger><SelectContent><SelectItem value="none">No image assigned</SelectItem>{media.map((m,i)=><SelectItem value={m.id} key={m.id}>{i+1}. {m.caption||m.name}</SelectItem>)}</SelectContent></Select>;}

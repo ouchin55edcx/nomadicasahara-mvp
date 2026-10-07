@@ -10,7 +10,6 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         // Partner portal and customer account areas are never indexed.
         disallow: [
-          "/api/",
           "/*/partner/",
           "/*/book/",
           "/*/reservar/",

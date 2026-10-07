@@ -6,15 +6,15 @@ export const loginStep1Schema = z.object({
   email: z
     .string()
     .trim()
-    .min(1, "Introduce tu correo electrónico")
-    .email("Introduce un correo electrónico válido"),
-  password: z.string().min(1, "Introduce tu contraseña"),
+    .min(1, "Enter your email address")
+    .email("Enter a valid email address"),
+  password: z.string().min(1, "Enter your password"),
 });
 
 export const loginStep2Schema = z.object({
   code: z
     .string()
-    .regex(/^\d{6}$/, "El código debe tener6 dígitos"),
+    .regex(/^\d{6}$/, "Enter the 6-digit verification code"),
 });
 
 export type LoginStep1Values = z.infer<typeof loginStep1Schema>;
