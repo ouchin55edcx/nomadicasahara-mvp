@@ -17,7 +17,7 @@ const openSans = Open_Sans({subsets: ["latin"], display: "swap"});
 const playball = Playball({weight: "400", subsets: ["latin"], display: "swap", variable: "--font-playball"});
 type OfferTour = TourRecord & {pricing: Extract<TourRecord["pricing"], {kind: "offers"}>};
 
-export default async function OffersComparisonPage({tour, locale, imagePaths, state}: {tour: OfferTour; locale: Locale; imagePaths: string[]; state: OfferQueryState}) {
+export default async function OffersComparisonPage({tour, locale, imagePaths, state, previewDetailsBase}: {tour: OfferTour; locale: Locale; imagePaths: string[]; state: OfferQueryState; previewDetailsBase?: string}) {
   const t = await getTranslations({locale, namespace: "TourOffers"});
   const detailT = await getTranslations({locale, namespace: "TourDetail"});
   const routeT = await getTranslations({locale, namespace: "RoutePages"});
@@ -57,6 +57,8 @@ export default async function OffersComparisonPage({tour, locale, imagePaths, st
       <OffersComparisonClient tour={tour} locale={locale} slug={tour.slug} images={imagePaths} stayImages={stayImages} transferPrices={getAirportTransferPrices()} initialState={state}
         detailHrefs={Object.fromEntries(tiers.map((tier) => [tier, offerHref(tour, tier, locale)])) as Record<Tier, ReturnType<typeof offerHref>>}
         bookingHrefs={Object.fromEntries(tiers.map((tier) => [tier, bookHref(tour, tier)])) as Record<Tier, ReturnType<typeof bookHref>>}
+        previewDetailsBase={previewDetailsBase}
+        showAllTiers={Boolean(previewDetailsBase)}
         labels={labels} tierLabels={tierLabels} />
     </div>
   </main>;

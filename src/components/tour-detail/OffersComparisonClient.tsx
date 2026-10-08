@@ -33,16 +33,16 @@ function getFeatureIcon(id: string) {
   return /meal|food|dinner|board/i.test(id) ? Utensils : /transport|vehicle|group|travel/i.test(id) ? BusFront : Check;
 }
 
-export default function OffersComparisonClient({tour, locale, slug, images, stayImages, transferPrices, initialState, detailHrefs, bookingHrefs, labels, tierLabels}: {
+export default function OffersComparisonClient({tour, locale, slug, images, stayImages, transferPrices, initialState, detailHrefs, bookingHrefs, labels, tierLabels, previewDetailsBase, showAllTiers = false}: {
   tour: OfferTour; locale: Locale; slug: string; images: string[]; stayImages: Record<Tier, (string | null)[]>;
   transferPrices: Record<Tier, number>; initialState: OfferQueryState; detailHrefs: Record<Tier, OfferDetailHref>;
-  bookingHrefs: Record<Tier, BookingHref>; labels: Labels; tierLabels: Record<Tier, string>;
+  bookingHrefs: Record<Tier, BookingHref>; labels: Labels; tierLabels: Record<Tier, string>; previewDetailsBase?: string; showAllTiers?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [state, setState] = useState(initialState);
   const recommendedTier = tour.recommendedTier ?? "standard";
-  const tiers: Tier[] = ["economic", recommendedTier === "economic" ? "standard" : recommendedTier];
+  const tiers: Tier[] = showAllTiers ? ["economic", "standard", "premium"] : ["economic", recommendedTier === "economic" ? "standard" : recommendedTier];
   const [activeTier, setActiveTier] = useState<Tier>(tiers[1]);
   const [footerVisible, setFooterVisible] = useState(false);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -85,7 +85,9 @@ export default function OffersComparisonClient({tour, locale, slug, images, stay
 
   const priceFor = (tier: Tier) => calculatePrice({unit: pricing.unit, tierPrice: pricing.tiers[tier], travelers: state.travelers, arrival: state.arrival, departure: state.departure, transferPrices});
   const commonQuery = {date: state.date || undefined, travelers: String(state.travelers), arrival: state.arrival, departure: state.departure};
-  const detailHref = (tier: Tier) => ({...detailHrefs[tier], query: commonQuery});
+  const detailHref = (tier: Tier) => previewDetailsBase
+    ? `${previewDetailsBase}?view=tier&tier=${tier}`
+    : {...detailHrefs[tier], query: commonQuery};
   const bookingHref = (tier: Tier) => ({...bookingHrefs[tier], query: commonQuery});
   const differingFeatures = useMemo(() => new Set(pricing.features.filter((feature) => new Set(tiers.map((tier) => JSON.stringify(feature.tiers[tier]))).size > 1).map((feature) => feature.id)), [pricing.features]);
   const excludedBySection = new Set([...travelStyleFeatureIds, ...(showStays ? ["camp"] : [])]);
@@ -171,13 +173,13 @@ export default function OffersComparisonClient({tour, locale, slug, images, stay
     const numberRows = 3 + (showStays ? 1 : 0) + (travelFeatures.length ? 1 : 0) + (tierIncluded.length ? 1 : 0) + (showTransfers ? 1 : 0);
     return <article className={`offer-card offer-tier-${tier}`} style={{"--offer-rows": numberRows} as React.CSSProperties}>
       <header className={`offer-card-header ${tier === "economic" ? "is-economic" : recommended ? "is-recommended" : "is-premium"}`}>
-        <div className="min-w-0"><h2>{tier === "economic" ? labels.economicSelection : labels.recommendedSelection}</h2></div>
+        <div className="min-w-0"><h2>{tierLabels[tier]}</h2></div>
         <div className="offer-total"><span className="offer-total-label">{labels.totalPrice}</span><strong>{formatPrice(locale, result.total)}</strong><span>{formatPrice(locale, result.baseUnitPrice)} {unitLabel}</span></div>
       </header>
       <div className="offer-actions">
         <div className="offer-action-top">
           <div className="offer-chips">{chips.map((feature) => {const Icon = getFeatureIcon(feature.id); return <span key={feature.id} className="offer-chip"><Icon aria-hidden="true" size={15}/>{feature.label[locale]}</span>;})}</div>
-          <div className="offer-action-buttons"><Link href={detailHref(tier)} className="offer-button offer-button-outline">{labels.details}</Link><Link href={bookingHref(tier)} className="offer-button offer-button-primary">{labels.book}</Link></div>
+          <div className="offer-action-buttons">{previewDetailsBase ? <a href={detailHref(tier) as string} className="offer-button offer-button-outline">{labels.details}</a> : <Link href={detailHref(tier) as OfferDetailHref & {query?: {date?: string; travelers: string; arrival: TransferTier; departure: TransferTier}}} className="offer-button offer-button-outline">{labels.details}</Link>}<Link href={bookingHref(tier)} className="offer-button offer-button-primary">{labels.book}</Link></div>
         </div>
         <PriceBreakdown tier={tier}/>
       </div>
@@ -219,7 +221,7 @@ export default function OffersComparisonClient({tour, locale, slug, images, stay
 
     <div className="offers-toolbar"><label className="offers-switch"><input type="checkbox" role="switch" checked={state.diff} onChange={(event) => updateState({diff: event.target.checked})}/><span className="offers-switch-track" aria-hidden="true"><span/></span><span>{labels.differences}</span></label></div>
     <div className="offers-tier-tabs" role="tablist" aria-label={tour.title[locale]}>{tiers.map((tier, index) => <button key={tier} ref={(node) => {tabRefs.current[index] = node;}} type="button" role="tab" id={`offer-tab-${tier}`} aria-controls="offer-active-panel" aria-selected={activeTier === tier} tabIndex={activeTier === tier ? 0 : -1} onKeyDown={(event) => tabKeyDown(event, index)} onClick={() => setActiveTier(tier)}>{tierLabels[tier]}</button>)}</div>
-    <div className="offers-cards-grid" style={{"--offer-rows": totalColumnRows} as React.CSSProperties} data-circuit={isCircuit}>
+    <div className="offers-cards-grid" style={{"--offer-rows": totalColumnRows, ...(showAllTiers ? {gridTemplateColumns: "repeat(3,minmax(0,1fr))"} : {})} as React.CSSProperties} data-circuit={isCircuit}>
       {tiers.map((tier) => <TierCard key={`desktop-${tier}`} tier={tier} cardKey="desktop"/>)}
     </div>
     <div id="offer-active-panel" role="tabpanel" aria-labelledby={`offer-tab-${activeTier}`} className="offers-mobile-card"><TierCard tier={activeTier} cardKey="mobile"/></div>

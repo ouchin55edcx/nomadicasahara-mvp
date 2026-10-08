@@ -11,10 +11,10 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import {logout} from "@/app/[locale]/(auth)/partner/login/actions";
+import BrandLogo from "@/components/layout/BrandLogo";
 
 const navItems = [
   { label: "Overview", href: "/partner/overview" },
-  { label: "Users", href: "/partner/users" },
   { label: "Treks", href: "/partner/treks" },
   { label: "Category", href: "/partner/category" },
   { label: "Booking", href: "/partner/booking" },
@@ -39,11 +39,8 @@ export default function AdminHeader() {
         <div className="mx-auto flex w-full max-w-[1440px] items-center justify-between">
           {/* Left: Logo */}
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#67B500]">
-              <span className="text-sm font-black text-white">TV</span>
-            </div>
+            <BrandLogo className="h-10 sm:h-12" />
             <div className="hidden sm:block">
-              <p className="text-xs leading-none font-semibold text-gray-400">Toledano Viajes</p>
               <p className="mt-0.5 text-sm leading-none font-black text-gray-900">
                 Partner Dashboard
               </p>
@@ -102,7 +99,7 @@ export default function AdminHeader() {
 
       {/* MOBILE BOTTOM TAB BAR - visible only below lg */}
       <nav className="fixed right-0 bottom-0 left-0 z-50 border-t border-gray-100 bg-white lg:hidden">
-        <div className="safe-pb grid h-16 grid-cols-6">
+        <div className="safe-pb grid h-16 grid-cols-5">
           {mobileTabs.map((tab) => {
             const active = pathname.startsWith(tab.href);
             const Icon = tab.icon;

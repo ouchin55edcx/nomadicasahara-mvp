@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export default function BrandLogo({
   variant = "header",
   className = "",
@@ -5,6 +7,19 @@ export default function BrandLogo({
   variant?: "header" | "footer";
   className?: string;
 }) {
+  if (variant === "header") {
+    return (
+      <Image
+        src="/images/toledano-viajes-logo.jpeg"
+        alt="Toledano Viajes"
+        width={1536}
+        height={1024}
+        className={`h-12 w-auto object-contain sm:h-14 ${className}`}
+        priority
+      />
+    );
+  }
+
   return (
     <span
       aria-label="Toledano viajes"
