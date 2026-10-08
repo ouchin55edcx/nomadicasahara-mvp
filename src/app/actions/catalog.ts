@@ -18,6 +18,7 @@ export type PublicProduct = TourRecord & {
   rating: number | null;
   reviewCount: number;
   gallery: string[];
+  cancellationPolicy: string;
 };
 
 type ProductRow = {
@@ -49,6 +50,7 @@ type ProductRow = {
   time?: string | null;
   private_group_size?: string | null;
   itinerary?: unknown;
+  cancellation_policy?: string | null;
 };
 
 function toTour(row: ProductRow): PublicProduct {
@@ -108,6 +110,7 @@ function toTour(row: ProductRow): PublicProduct {
     reviewCount: Number(row.review_count || 0),
     currency: String(row.currency || "EUR"),
     gallery: Array.isArray(row.gallery) ? row.gallery.filter((url): url is string => typeof url === "string" && Boolean(url.trim())) : [],
+    cancellationPolicy: String(row.cancellation_policy || "Cancelación gratuita hasta 24 horas antes de la actividad. Después de ese plazo, contacta con soporte. Si el operador cancela la actividad, recibirás un reembolso completo."),
   };
 }
 

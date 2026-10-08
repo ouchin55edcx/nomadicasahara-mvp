@@ -1,7 +1,7 @@
 import type {ParsedOfferId} from "@/lib/tour-catalog";
-import {getPublicProductBySlug} from "@/app/actions/catalog";
+import {getPublicProductBySlug, type PublicProduct} from "@/app/actions/catalog";
 
-export async function resolvePublicOfferId(value: string): Promise<ParsedOfferId | null> {
+export async function resolvePublicOfferId(value: string): Promise<(ParsedOfferId & {tour: PublicProduct}) | null> {
   const match = /^(.*)--base$/.exec(value);
   if (!match) return null;
   const [, slug] = match;

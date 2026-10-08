@@ -2,12 +2,13 @@ import type {Metadata} from "next";
 import {notFound} from "next/navigation";
 import {getTranslations} from "next-intl/server";
 import CopyRequestButton from "@/components/booking/CopyRequestButton";
+import RefreshBookingStatus from "@/components/booking/RefreshBookingStatus";
 import {Link} from "@/i18n/navigation";
 import {getBookingConfirmation} from "@/app/[locale]/(public)/book/actions";
 import {isLocale} from "@/lib/tour-route";
 
 export const dynamicParams = true;
-type Props = {params: Promise<{locale: string; offerId: string}>; searchParams: Promise<{ref?: string}>};
+type Props = {params: Promise<{locale: string; offerId: string}>; searchParams: Promise<{ref?: string; session_id?: string}>};
 
 export async function generateMetadata({params}: Props): Promise<Metadata> {
   const {locale} = await params;
@@ -68,8 +69,10 @@ export default async function BookingConfirmation({params, searchParams}: Props)
         </dl>
       </div>
       <h2 className="mt-7 text-lg font-bold">{t("whatNext")}</h2>
-      <p className="mt-2 text-sm leading-6 text-[#444]">{t("weReview")}</p>
-      <p className="mt-4 rounded-lg border border-[#929547]/40 bg-[#F8FAF5] p-3 text-sm leading-6">{t("deliveryNote")}</p>
+      <RefreshBookingStatus active={(booking.payment_status !== "paid" || !booking.ticket_email_sent) && Boolean(query.session_id)} />
+      <p role="status" className="mt-2 text-sm leading-6 text-[#444]">{booking.payment_status !== "paid" ? t("paymentPending") : booking.ticket_email_sent ? t("paymentPaid") : t("ticketEmailPending")}</p>
+      {booking.tickets.length ? <div className="mt-4 rounded-xl border border-[#006D41]/30 bg-[#F8FAF5] p-4"><p className="text-sm font-semibold text-muted">{t("ticketCode")}</p><ol className="mt-2 space-y-3">{booking.tickets.map((ticket) => <li key={ticket.ticket_number} className="border-t border-[#006D41]/10 pt-3"><p className="text-xs text-muted">{t("ticketCode")} {ticket.ticket_number} · {booking.reference}</p><p className="mt-1 font-mono text-xl font-bold tracking-widest text-[#006D41]">{ticket.ticket_code}</p></li>)}</ol></div> : null}
+      <p className="mt-4 rounded-lg border border-[#929547]/40 bg-[#F8FAF5] p-3 text-sm leading-6">{booking.payment_status !== "paid" ? t("paymentPending") : booking.ticket_email_sent ? t("deliveryNote") : t("ticketEmailPending")}</p>
       <div className="mt-5 flex flex-wrap gap-3">
         {whatsappHref ? <a href={whatsappHref} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#67B500] px-4 text-sm font-bold text-black">{t("sendWhatsapp")}</a> : null}
         {emailHref ? <a href={emailHref} className="inline-flex min-h-11 items-center justify-center rounded-md border border-[#006D41] px-4 text-sm font-semibold text-[#006D41]">{t("sendEmail")}</a> : null}

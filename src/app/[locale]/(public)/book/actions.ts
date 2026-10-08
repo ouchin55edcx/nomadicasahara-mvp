@@ -3,22 +3,22 @@
 import {bookingRequestSchema} from "@/lib/validations/booking";
 
 export async function submitBookingRequest(input: unknown) {
-  if (!input || typeof input !== "object" || !("offerId" in input)) return {ok: false as const, error: "serverError"};
+  if (!input || typeof input !== "object" || !("offerId" in input) || !("locale" in input)) return {ok: false as const, error: "serverError"};
   const payload = input as Record<string, unknown>;
   const result = bookingRequestSchema.safeParse(payload.form);
   if (!result.success) return {ok: false as const, error: result.error.issues[0]?.message ?? "serverError"};
-  if (typeof payload.offerId !== "string") return {ok: false as const, error: "serverError"};
+  if (typeof payload.offerId !== "string" || !["es", "en", "pt"].includes(String(payload.locale))) return {ok: false as const, error: "serverError"};
   try {
     const base = (process.env.API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
     const response = await fetch(`${base}/API/V1/bookings`, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({offerId: payload.offerId, form: result.data}),
+      body: JSON.stringify({offerId: payload.offerId, locale: payload.locale, form: result.data}),
       cache: "no-store",
     });
     const data = await response.json().catch(() => null);
-    if (!response.ok || !data?.booking?.reference) return {ok: false as const, error: data?.error || "serverError"};
-    return {ok: true as const, reference: data.booking.reference};
+    if (!response.ok || typeof data?.checkoutUrl !== "string") return {ok: false as const, error: data?.error || "serverError"};
+    return {ok: true as const, checkoutUrl: data.checkoutUrl};
   } catch {
     return {ok: false as const, error: "serverError"};
   }
@@ -45,6 +45,11 @@ export async function getBookingConfirmation(reference: string, offerId: string)
       booking_date: string;
       travelers: number;
       status: string;
+      payment_status: string;
+      ticket_code: string | null;
+      ticket_email_sent: boolean;
+      tickets: {ticket_number: number; ticket_code: string}[];
+      cancellation_policy: string;
     };
   } catch {
     return null;

@@ -10,7 +10,7 @@ import {getAirportTransferPrices} from "@/lib/tour-catalog";
 
 export const dynamicParams = true;
 
-type Props = {params: Promise<{locale: string; offerId: string}>; searchParams: Promise<{date?: string; travelers?: string; arrival?: string; departure?: string}>};
+type Props = {params: Promise<{locale: string; offerId: string}>; searchParams: Promise<{date?: string; travelers?: string; arrival?: string; departure?: string; payment?: string}>};
 
 export async function generateMetadata({params}: Props): Promise<Metadata> {
   const {locale: rawLocale} = await params;
@@ -27,5 +27,5 @@ export default async function BookingRoute({params, searchParams}: Props) {
   const queryTravelers = Number(query.travelers);
   const initialTravelers = Number.isInteger(queryTravelers) && queryTravelers >= 1 && queryTravelers <= 20 ? queryTravelers : 2;
   const offerState = parseOfferQuery(query, parsed.tour);
-  return <BookingForm offerId={offerId} parsed={parsed} locale={rawLocale as Locale} initialDate={offerState.date} initialTravelers={initialTravelers} initialArrival={offerState.arrival} initialDeparture={offerState.departure} transferPrices={getAirportTransferPrices()} />;
+  return <BookingForm offerId={offerId} parsed={parsed} locale={rawLocale as Locale} initialDate={offerState.date} initialTravelers={initialTravelers} initialArrival={offerState.arrival} initialDeparture={offerState.departure} transferPrices={getAirportTransferPrices()} cancellationPolicy={parsed.tour.cancellationPolicy} paymentCancelled={query.payment === "cancelled"} />;
 }

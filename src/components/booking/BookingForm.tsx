@@ -2,10 +2,10 @@
 
 import {useEffect, useReducer, useRef, useState} from "react";
 import {useTranslations} from "next-intl";
-import {Link, useRouter} from "@/i18n/navigation";
+import {Link} from "@/i18n/navigation";
 import {bookingRequestSchema, type BookingRequest} from "@/lib/validations/booking";
 import type {ParsedOfferId} from "@/lib/tour-catalog";
-import {confirmationHref, tourHref} from "@/lib/hrefs";
+import {tourHref} from "@/lib/hrefs";
 import type {Locale} from "@/i18n/routing";
 import {submitBookingRequest} from "@/app/[locale]/(public)/book/actions";
 import {calculatePrice, type TransferTier} from "@/lib/pricing";
@@ -30,11 +30,10 @@ function errorFromCode(code: string): FormError {
 
 const countryCodes = ["+212", "+34", "+33", "+44", "+1", "+49", "+351"];
 
-export default function BookingForm({offerId, parsed, locale, initialDate, initialTravelers, initialArrival, initialDeparture, transferPrices}: {offerId: string; parsed: ParsedOfferId; locale: Locale; initialDate: string; initialTravelers: number; initialArrival: TransferTier; initialDeparture: TransferTier; transferPrices: Record<Tier, number>}) {
+export default function BookingForm({offerId, parsed, locale, initialDate, initialTravelers, initialArrival, initialDeparture, transferPrices, cancellationPolicy, paymentCancelled}: {offerId: string; parsed: ParsedOfferId; locale: Locale; initialDate: string; initialTravelers: number; initialArrival: TransferTier; initialDeparture: TransferTier; transferPrices: Record<Tier, number>; cancellationPolicy: string; paymentCancelled: boolean}) {
   const t = useTranslations("Booking");
   const common = useTranslations("common");
   const offerT = useTranslations("TourOffers");
-  const router = useRouter();
   const headingRef = useRef<HTMLHeadingElement>(null);
   const [submitError, setSubmitError] = useState<FormError | null>(null);
   const [state, dispatch] = useReducer(reducer, {
@@ -92,13 +91,13 @@ export default function BookingForm({offerId, parsed, locale, initialDate, initi
     if (!validateStep(3)) return;
     dispatch({type: "pending", pending: true});
     try {
-      const response = await submitBookingRequest({offerId, form: state.values});
+      const response = await submitBookingRequest({offerId, locale, form: state.values});
       if (!response.ok) {
         setSubmitError(errorFromCode(response.error));
         dispatch({type: "pending", pending: false});
         return;
       }
-      router.push({...confirmationHref(offerId), query: {ref: response.reference}});
+      window.location.assign(response.checkoutUrl);
     } catch {
       setSubmitError("serverError");
     } finally {
@@ -114,13 +113,14 @@ export default function BookingForm({offerId, parsed, locale, initialDate, initi
     {tierName ? <p className="mt-1 text-sm text-[#006D41]">{tierName}</p> : null}
     <div className="mt-4 space-y-2 border-t border-dashed border-[#006D41]/40 pt-4 text-sm">
       <p className="flex justify-between gap-3"><span>{t("date")}</span><span className="font-medium">{state.values.date || "—"}</span></p>
-      {perTraveler ? <p className="flex justify-between gap-3"><span>{t("travelers")}</span><span className="font-medium">{state.values.travelers}</span></p> : null}
+      <p className="flex justify-between gap-3"><span>{t("travelers")}</span><span className="font-medium">{state.values.travelers}</span></p>
       <p className="flex justify-between gap-3"><span>{money(parsed.price)} {unitLabel}</span><span className="font-medium">{perTraveler ? `× ${state.values.travelers}` : ""}</span></p>
       {breakdown.arrivalTotal ? <p className="flex justify-between gap-3"><span>{offerT("arrivalTransfer")}</span><span>{money(breakdown.arrivalTotal)}</span></p> : null}
       {breakdown.departureTotal ? <p className="flex justify-between gap-3"><span>{offerT("departureTransfer")}</span><span>{money(breakdown.departureTotal)}</span></p> : null}
       <p className="flex justify-between gap-3 border-t border-line pt-2 text-base"><b>{t("estimatedTotalLabel")}</b><b>{money(total)}</b></p>
     </div>
-    <p className="mt-3 text-xs leading-5 text-muted">{t("estimated")}</p>
+    <p className="mt-3 text-xs leading-5 text-muted">{t("paymentNotice")}</p>
+    <p className="mt-2 text-xs leading-5 text-muted"><b>{t("cancellationPolicy")}: </b>{cancellationPolicy}</p>
   </section>;
 
   return <main className="min-h-[70vh] bg-[#F8FAF5] px-4 py-8 sm:py-12">
@@ -132,15 +132,17 @@ export default function BookingForm({offerId, parsed, locale, initialDate, initi
       <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <form onSubmit={onSubmit} noValidate className="rounded-2xl border border-line bg-white p-5 shadow-sm sm:p-8">
           <h1 ref={headingRef} tabIndex={-1} id="booking-step-heading" className="text-2xl font-bold outline-none sm:text-3xl">{state.step === 1 ? t("title") : state.step === 2 ? t("stepDetails") : t("review")}</h1>
+          {paymentCancelled ? <p role="status" className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{t("paymentCancelled")}</p> : null}
           {state.step === 1 ? <div className="mt-6 space-y-5">
             <label htmlFor="booking-date" className="block text-sm font-semibold">{t("date")}<input id="booking-date" type="date" min={new Date().toISOString().slice(0, 10)} value={state.values.date} onChange={(event) => setField("date", event.target.value)} aria-invalid={Boolean(state.errors.date)} aria-describedby={state.errors.date ? "error-date" : undefined} className="mt-1.5 h-12 w-full rounded-md border border-line px-3 font-normal focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#006D41]" />{state.errors.date ? <span id="error-date" className="mt-1 block text-xs font-normal text-red-700">{t(state.errors.date)}</span> : null}</label>
-            {perTraveler ? <label htmlFor="booking-travelers" className="block text-sm font-semibold">{t("travelers")}<input id="booking-travelers" type="number" min={1} max={20} value={state.values.travelers} onChange={(event) => setField("travelers", Number(event.target.value))} aria-invalid={Boolean(state.errors.travelers)} className="mt-1.5 h-12 w-full rounded-md border border-line px-3 font-normal focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#006D41]" />{state.errors.travelers ? <span className="mt-1 block text-xs font-normal text-red-700">{t(state.errors.travelers)}</span> : null}</label> : null}
+            <label htmlFor="booking-travelers" className="block text-sm font-semibold">{t("travelers")}<input id="booking-travelers" type="number" min={1} max={20} value={state.values.travelers} onChange={(event) => setField("travelers", Number(event.target.value))} aria-invalid={Boolean(state.errors.travelers)} className="mt-1.5 h-12 w-full rounded-md border border-line px-3 font-normal focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#006D41]" />{state.errors.travelers ? <span className="mt-1 block text-xs font-normal text-red-700">{t(state.errors.travelers)}</span> : null}</label>
             <label htmlFor="booking-pickup" className="block text-sm font-semibold">{t("pickup")}<input id="booking-pickup" value={state.values.pickup} onChange={(event) => setField("pickup", event.target.value)} className="mt-1.5 h-12 w-full rounded-md border border-line px-3 font-normal focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#006D41]" /></label>
             <label htmlFor="booking-notes" className="block text-sm font-semibold">{t("notes")}<textarea id="booking-notes" rows={3} value={state.values.notes} onChange={(event) => setField("notes", event.target.value)} className="mt-1.5 w-full rounded-md border border-line px-3 py-2 font-normal focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#006D41]" /></label>
           </div> : null}
           {state.step === 2 ? <div className="mt-6 space-y-5">{textField("name", t("name"), "text", "name")}{textField("email", t("email"), "email", "email")}<div className="grid grid-cols-[130px_1fr] items-end gap-3"><label htmlFor="booking-code" className="block text-sm font-semibold">{t("countryCode")}<select id="booking-code" value={state.values.countryCode} onChange={(event) => setField("countryCode", event.target.value)} className="mt-1.5 h-12 w-full rounded-md border border-line bg-white px-2 font-normal">{countryCodes.map((code) => <option key={code} value={code}>{code}</option>)}</select></label>{textField("phone", t("phone"), "tel", "tel")}</div></div> : null}
           {state.step === 3 ? <div className="mt-6 space-y-5">
             <p className="text-sm leading-6 text-muted">{t("reviewIntro")}</p>
+            <p className="rounded-lg border border-[#929547]/40 bg-[#F8FAF5] p-3 text-sm leading-6"><b>{t("cancellationPolicy")}: </b>{cancellationPolicy}</p>
             <dl className="grid gap-3 rounded-xl bg-[#F8FAF5] p-4 text-sm sm:grid-cols-2"><div><dt className="text-muted">{t("name")}</dt><dd className="font-semibold">{state.values.name}</dd></div><div><dt className="text-muted">{t("email")}</dt><dd className="font-semibold">{state.values.email}</dd></div><div><dt className="text-muted">{t("phone")}</dt><dd className="font-semibold">{state.values.countryCode} {state.values.phone}</dd></div><div><dt className="text-muted">{t("pickup")}</dt><dd className="font-semibold">{state.values.pickup || "—"}</dd></div><div className="sm:col-span-2"><dt className="text-muted">{t("notes")}</dt><dd className="font-semibold">{state.values.notes || "—"}</dd></div></dl>
             <label className="flex min-h-11 items-start gap-3 text-sm leading-6"><input type="checkbox" checked={state.values.consent} onChange={(event) => setField("consent", event.target.checked)} className="mt-1 h-5 w-5 accent-[#006D41]" /><span>{t("consentPrefix")} <Link href={{pathname: "/terms"}} className="font-semibold text-[#006D41] underline">{t("terms")}</Link> {t("and")} <Link href={{pathname: "/privacy"}} className="font-semibold text-[#006D41] underline">{t("privacy")}</Link></span></label>
             {state.errors.consent ? <p className="text-xs text-red-700">{t(state.errors.consent)}</p> : null}
