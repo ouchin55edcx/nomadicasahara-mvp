@@ -8,7 +8,7 @@ import type {ParsedOfferId} from "@/lib/tour-catalog";
 import {confirmationHref, tourHref} from "@/lib/hrefs";
 import type {Locale} from "@/i18n/routing";
 import {submitBookingRequest} from "@/app/[locale]/(public)/book/actions";
-import {calculatePrice, formatPrice, type TransferTier} from "@/lib/pricing";
+import {calculatePrice, type TransferTier} from "@/lib/pricing";
 import type {Tier} from "@/types/tour-catalog";
 
 type Fields = Omit<BookingRequest, "travelers" | "consent"> & {travelers: number; consent: boolean};
@@ -52,7 +52,7 @@ export default function BookingForm({offerId, parsed, locale, initialDate, initi
   const perTraveler = unit === "person" || unit === "ticket";
   const breakdown = calculatePrice({unit, tierPrice: parsed.price, travelers: state.values.travelers, arrival, departure, transferPrices});
   const total = breakdown.total;
-  const money = (value: number) => formatPrice(locale, value);
+  const money = (value: number) => new Intl.NumberFormat(locale, {style: "currency", currency: parsed.tour.currency || "EUR", maximumFractionDigits: 2}).format(value);
   const unitLabel = unit === "vehicle" ? t("unitVehicle") : unit === "group" ? t("unitGroup") : unit === "ticket" ? t("unitTicket") : t("unitPerson");
   const tierName = parsed.tier === "base" ? "" : offerT(parsed.tier);
   const setField = <K extends Field>(field: K, value: Fields[K]) => dispatch({type: "field", field, value} as Action);
@@ -98,7 +98,7 @@ export default function BookingForm({offerId, parsed, locale, initialDate, initi
         dispatch({type: "pending", pending: false});
         return;
       }
-      router.push({...confirmationHref(offerId), query: {ref: response.reference, date: state.values.date, travelers: String(state.values.travelers), arrival, departure}});
+      router.push({...confirmationHref(offerId), query: {ref: response.reference}});
     } catch {
       setSubmitError("serverError");
     } finally {

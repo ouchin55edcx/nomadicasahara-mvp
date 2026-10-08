@@ -15,7 +15,7 @@ export function buildOfferId(tour: TourRecord, tier?: Tier): string {
   return `${tour.id}--${tour.pricing.kind === "single" ? "base" : tier}`;
 }
 
-export type ParsedOfferId = {tour: TourRecord; tier: Tier | "base"; price: number; pricing: Exclude<Pricing, {kind: "quote"}>};
+export type ParsedOfferId = {tour: TourRecord & {currency?: string}; tier: Tier | "base"; price: number; pricing: Exclude<Pricing, {kind: "quote"}>};
 
 export function getTourById(id: string): TourRecord | undefined {
   return allTourRecords.find((tour) => tour.id === id);
