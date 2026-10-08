@@ -2,7 +2,7 @@ import type {Metadata} from "next";
 import {notFound} from "next/navigation";
 import {getTranslations} from "next-intl/server";
 import BookingForm from "@/components/booking/BookingForm";
-import {parseOfferId} from "@/lib/tour-catalog";
+import {resolvePublicOfferId} from "@/lib/public-booking";
 import {isLocale} from "@/lib/tour-route";
 import type {Locale} from "@/i18n/routing";
 import {parseOfferQuery} from "@/lib/tour-query";
@@ -22,7 +22,7 @@ export async function generateMetadata({params}: Props): Promise<Metadata> {
 export default async function BookingRoute({params, searchParams}: Props) {
   const [{locale: rawLocale, offerId}, query] = await Promise.all([params, searchParams]);
   if (!isLocale(rawLocale)) notFound();
-  const parsed = parseOfferId(offerId);
+  const parsed = await resolvePublicOfferId(offerId);
   if (!parsed) notFound();
   const queryTravelers = Number(query.travelers);
   const initialTravelers = Number.isInteger(queryTravelers) && queryTravelers >= 1 && queryTravelers <= 20 ? queryTravelers : 2;

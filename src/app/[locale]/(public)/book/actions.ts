@@ -1,13 +1,13 @@
 "use server";
 
 import {randomInt} from "node:crypto";
-import {parseOfferId} from "@/lib/tour-catalog";
+import {resolvePublicOfferId} from "@/lib/public-booking";
 import {bookingRequestSchema} from "@/lib/validations/booking";
 
 export async function submitBookingRequest(input: unknown) {
   if (!input || typeof input !== "object" || !("offerId" in input)) return {ok: false as const, error: "serverError"};
   const payload = input as Record<string, unknown>;
-  if (typeof payload.offerId !== "string" || !parseOfferId(payload.offerId)) return {ok: false as const, error: "serverError"};
+  if (typeof payload.offerId !== "string" || !await resolvePublicOfferId(payload.offerId)) return {ok: false as const, error: "serverError"};
   const result = bookingRequestSchema.safeParse(payload.form);
   if (!result.success) return {ok: false as const, error: result.error.issues[0]?.message ?? "serverError"};
   const now = new Date();

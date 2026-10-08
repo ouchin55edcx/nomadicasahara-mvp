@@ -1,5 +1,5 @@
 import { getCategories } from "@/app/actions/categories";
-import { getTreks } from "@/app/actions/treks";
+import { getPublicProducts } from "@/app/actions/catalog";
 import CategoryManagement from "./CategoryManagement";
 import type { Metadata } from "next";
 
@@ -11,7 +11,8 @@ export const metadata: Metadata = {
 
 export default async function PartnerCategoryPage() {
   const categories = await getCategories();
-  const tours = await getTreks();
+  const products = await getPublicProducts();
+  const tours = products.map((product) => ({id: product.id, title: product.title.es, category_name: product.productCategory}));
 
   return (
     <div>

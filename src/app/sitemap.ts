@@ -1,6 +1,6 @@
 import type {MetadataRoute} from "next";
 
-import {allTourRecords} from "@/data/static/tour-catalog";
+import {getPublicProducts} from "@/app/actions/catalog";
 import {categories, cities, type TourCategory, type TourCity} from "@/data/tour-taxonomy";
 import {routing, type Locale} from "@/i18n/routing";
 import {siteUrl} from "@/lib/seo/metadata";
@@ -30,7 +30,8 @@ function localizedEntries(paths: Record<Locale, string>, priority: number, chang
   }));
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const products = await getPublicProducts();
   const staticEntries = [
     localizedEntries({en: "/", es: "/", pt: "/"}, 1, "weekly"),
     localizedEntries({en: "/tours", es: "/excursiones", pt: "/passeios"}, 0.9, "daily"),
@@ -45,7 +46,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     const paths = Object.fromEntries(locales.map((locale) => [locale, localizedCityPath(locale, city)])) as Record<Locale, string>;
     return localizedEntries(paths, 0.75, "weekly");
   });
-  const tourEntries = allTourRecords.flatMap((tour) => {
+  const tourEntries = products.flatMap((tour) => {
     const mode = tour.pricing.kind === "offers" ? "offers" : "detail";
     const paths = Object.fromEntries(locales.map((locale) => [locale, localizedTourPath(locale, tour, mode)])) as Record<Locale, string>;
     return localizedEntries(paths, tour.pricing.kind === "offers" ? 0.75 : 0.65, "weekly");

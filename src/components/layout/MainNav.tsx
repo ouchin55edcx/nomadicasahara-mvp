@@ -2,38 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { useLocale } from "next-intl";
 import {useParams} from "next/navigation";
 
 import BrandLogo from "@/components/layout/BrandLogo";
 import { Link, usePathname } from "@/i18n/navigation";
-import {categoryHref, destinationHref} from "@/lib/hrefs";
-import type {Locale} from "@/i18n/routing";
+import {getPublicCategories, type Category} from "@/app/actions/categories";
 
-type NavLink = { key: string; href: {pathname: string; params: Record<string, string>} };
-type NavItem = { key: string; href: {pathname: string; params: Record<string, string>}; links: NavLink[] };
-
-// Hrefs are canonical (locale-independent) so the same entry serves every
-// language; only the labels come from the message catalogs.
-const NAV_ITEMS = (locale: Locale): NavItem[] => [
-  {key: "desert", href: categoryHref("desert", locale), links: [
-    {key: "agafay", href: destinationHref("agafay", locale)},
-    {key: "zagora", href: destinationHref("zagora", locale)},
-    {key: "merzouga", href: destinationHref("merzouga", locale)},
-  ]},
-  {key: "saidiaBeach", href: categoryHref("saidia-beach", locale), links: []},
-  {key: "privateTours", href: categoryHref("private-tours", locale), links: []},
-  {key: "airportTransfers", href: categoryHref("transfers", locale), links: []},
-  {key: "dinnerShows", href: categoryHref("dinner-shows", locale), links: []},
-  {key: "hammamSpa", href: categoryHref("hammam-spa", locale), links: []},
-  {key: "multiDay", href: categoryHref("circuits", locale), links: []},
-];
+type NavHref = {pathname: string; params?: Record<string, string>; query?: Record<string, string | number | boolean | undefined>};
+type NavItem = {key: string; label: string; href: NavHref; links: {key: string; label: string; href: NavHref}[]};
 
 const CHEVRON = "M6 9l6 6 6-6";
 
 export default function MainNav() {
   const t = useTranslations();
-  const locale = useLocale() as Locale;
   const pathname = usePathname();
   const routeParams = useParams<Record<string, string | string[]>>();
   const [active, setActive] = useState(-1);
@@ -41,15 +22,20 @@ export default function MainNav() {
   const [openMenu, setOpenMenu] = useState<number | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [openSection, setOpenSection] = useState<number | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const items = NAV_ITEMS(locale).map((item) => ({
-    ...item,
-    label: t(`nav.items.${item.key}`),
-    links: item.links.map((link) => ({
-      ...link,
-      label: t(`nav.places.${link.key}`),
-    })),
+  useEffect(() => {
+    let mounted = true;
+    void getPublicCategories().then((result) => { if (mounted) setCategories(result); });
+    return () => { mounted = false; };
+  }, []);
+
+  const items: NavItem[] = categories.map((category) => ({
+    key: category.id,
+    label: category.name,
+    href: {pathname: "/tours", query: {category: category.name}},
+    links: [],
   }));
 
   const cancelClose = () => {
@@ -75,14 +61,14 @@ export default function MainNav() {
   }, []);
 
   useEffect(() => {
-    const matches = (href: {pathname: string; params: Record<string, string>}) => href.pathname === pathname && Object.entries(href.params).every(([key, value]) => routeParams[key] === value);
+    const matches = (href: NavHref) => !href.query && href.pathname === pathname && Object.entries(href.params || {}).every(([key, value]) => routeParams[key] === value);
     setActive(
       items.findIndex(
         (it) =>
           matches(it.href) || it.links.some((link) => matches(link.href)),
       ),
     );
-  }, [pathname, routeParams]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pathname, routeParams, categories]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     document.body.style.overflow = sheetOpen ? "hidden" : "";

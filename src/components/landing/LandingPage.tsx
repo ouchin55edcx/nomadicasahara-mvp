@@ -4,7 +4,7 @@ import Image from "next/image";
 import {useLocale, useTranslations} from "next-intl";
 import { CarFront, ChevronLeft, ChevronRight, Compass, MapPin, Sparkles, Utensils, Waves } from "lucide-react";
 import TourCard from "@/components/TourCard";
-import {allTourRecords} from "@/data/static/tour-catalog";
+import {getPublicProducts, type PublicProduct} from "@/app/actions/catalog";
 import type {TourRecord} from "@/types/tour-catalog";
 import {Link} from "@/i18n/navigation";
 import {categoryHref, destinationHref, localizedCategoryPath, localizedToursPath, tourHref} from "@/lib/hrefs";
@@ -110,17 +110,7 @@ const heroSlides = [
   },
 ];
 
-const homeTours = (ids: string[]) => ids.map((id) => allTourRecords.find((tour) => tour.id === id)).filter((tour): tour is TourRecord => Boolean(tour));
-const featuredTours = homeTours(["agafay-sunset-dinner", "marrakech-private-city", "fantasia-dinner-show", "hammam-massage", "saidia-beach-getaway"]);
-const featuredIds = new Set(featuredTours.map((tour) => tour.id));
 const cheapest = (tour: TourRecord) => tour.pricing.kind === "quote" ? Infinity : tour.pricing.kind === "single" ? tour.pricing.amount : Math.min(...Object.values(tour.pricing.tiers));
-const valueTours = allTourRecords.filter((tour) => !featuredIds.has(tour.id) && tour.details.layout !== "service" && cheapest(tour) < 50);
-const eveningTours = allTourRecords.filter((tour) => !featuredIds.has(tour.id) && (tour.id.startsWith("hammam-") || tour.id.includes("dinner-show")));
-const shownBeforeCircuits = new Set([...featuredIds, ...valueTours.map((tour) => tour.id), ...eveningTours.map((tour) => tour.id)]);
-const circuitTours = allTourRecords.filter((tour) => tour.details.layout === "multi-day" && !shownBeforeCircuits.has(tour.id));
-const shownBeforePrivate = new Set([...shownBeforeCircuits, ...circuitTours.map((tour) => tour.id)]);
-const privateTours = homeTours(["marrakech-private-city", "ouzoud-private-day"]).filter((tour) => !shownBeforePrivate.has(tour.id));
-const transferTours = homeTours(["marrakech-airport-transfer"]);
 const eligeTuViaje = [
   {img: IMG.puente, label: "AGAFAY", action: "Aventura", city: "agafay" as const},
   {img: IMG.parques, label: "MERZOUGA", action: "Descubre", city: "merzouga" as const},
@@ -153,8 +143,8 @@ function ActivityProductRail({
   previousLabel,
   nextLabel,
 }: {
-  products: TourRecord[];
-  renderCard: (product: TourRecord) => React.ReactNode;
+  products: PublicProduct[];
+  renderCard: (product: PublicProduct) => React.ReactNode;
   label: string;
   previousLabel: string;
   nextLabel: string;
@@ -206,6 +196,7 @@ function SearchSelect({ name, children }: { name: string; children: React.ReactN
 }
 
 export default function LandingPage() {
+  const [products, setProducts] = useState<PublicProduct[]>([]);
   const [activeTab, setActiveTab] = useState(0);
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const activeHero = heroSlides[activeHeroIndex];
@@ -214,10 +205,23 @@ export default function LandingPage() {
   const navT = useTranslations("nav.items");
   const routeT = useTranslations("RoutePages");
   const searchTabs = tabSpecs.map((tab) => ({...tab, label: navT(tab.key), path: localizedCategoryPath(locale, tab.category)}));
+  const featuredTours = products.filter((product) => product.featured).slice(0, 6);
+  const featuredIds = new Set(featuredTours.map((tour) => tour.id));
+  const valueTours = products.filter((tour) => !featuredIds.has(tour.id) && tour.productType !== "hotel" && cheapest(tour) < 50);
+  const eveningTours = products.filter((tour) => tour.productType === "hammam" || tour.productType === "dinner");
+  const circuitTours = products.filter((tour) => tour.durationDays && tour.durationDays > 1);
+  const privateTours = products.filter((tour) => tour.productType === "private-tour");
+  const transferTours = products.filter((tour) => ["airport-transfer", "transfer"].includes(tour.productType));
 
-  const formatPrice = (price: number) =>
-    `${price.toLocaleString(locale, {maximumFractionDigits: 2})} €`;
-  const productCard = (product: TourRecord, metaOverride?: string) => (
+  useEffect(() => {
+    let mounted = true;
+    void getPublicProducts().then((result) => { if (mounted) setProducts(result); });
+    return () => { mounted = false; };
+  }, []);
+
+  const formatPrice = (price: number, currency: string) =>
+    new Intl.NumberFormat(locale, {style: "currency", currency, maximumFractionDigits: 2}).format(price);
+  const productCard = (product: PublicProduct, metaOverride?: string) => (
     <TourCard
       key={product.id}
       image={product.image}
@@ -226,7 +230,7 @@ export default function LandingPage() {
       title={product.title[locale]}
       meta={metaOverride ?? product.destination[locale]}
       description={product.summary[locale]}
-      price={cheapest(product) === Infinity ? undefined : formatPrice(cheapest(product))}
+      price={cheapest(product) === Infinity ? undefined : formatPrice(cheapest(product), product.currency)}
       duration={product.duration[locale]}
       priceLabel={sectionT("priceFrom")}
       actionLabel={sectionT("bookNow")}
@@ -370,7 +374,7 @@ export default function LandingPage() {
                     <small>{product.summary[locale]}</small>
                     <small>{product.destination[locale]}</small>
                   </span>
-                  <span className="home-transfer-price"><small>{sectionT("priceFrom")}</small><b>{formatPrice(cheapest(product))}</b></span>
+                  <span className="home-transfer-price"><small>{sectionT("priceFrom")}</small><b>{formatPrice(cheapest(product), product.currency)}</b></span>
                   <span className="home-transfer-arrow" aria-hidden="true">›</span>
                 </Link>
               ))}

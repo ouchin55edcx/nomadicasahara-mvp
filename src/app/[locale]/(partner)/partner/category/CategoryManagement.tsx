@@ -78,10 +78,6 @@ export default function CategoryManagement({ initialCategories, tours }: Categor
 
   async function handleSubmit(formData: FormData) {
     setMessage(null);
-    if (!imageFile && (!editingCategory || removePhoto)) {
-      setPhotoError("Choose one category image before saving.");
-      return;
-    }
     const payload = new FormData();
     payload.set("name", String(formData.get("name") || ""));
     payload.set("description", String(formData.get("description") || ""));
@@ -270,7 +266,7 @@ export default function CategoryManagement({ initialCategories, tours }: Categor
 
             <form action={handleSubmit} className="grid grid-cols-1 items-start gap-6 p-6 sm:p-8 md:grid-cols-2">
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Category Photo</label>
+                <label className="text-sm font-bold text-gray-700">Category Photo <span className="font-normal text-gray-500">(optional)</span></label>
 
                 <label
                   className={`relative flex h-56 w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed transition-all ${

@@ -3,7 +3,7 @@ import {notFound} from "next/navigation";
 import {getTranslations} from "next-intl/server";
 import CopyRequestButton from "@/components/booking/CopyRequestButton";
 import {Link} from "@/i18n/navigation";
-import {parseOfferId} from "@/lib/tour-catalog";
+import {resolvePublicOfferId} from "@/lib/public-booking";
 import {tourHref} from "@/lib/hrefs";
 import {isLocale} from "@/lib/tour-route";
 import type {Locale} from "@/i18n/routing";
@@ -21,7 +21,7 @@ export async function generateMetadata({params}: Props): Promise<Metadata> {
 export default async function BookingConfirmation({params, searchParams}: Props) {
   const [{locale: rawLocale, offerId}, query] = await Promise.all([params, searchParams]);
   if (!isLocale(rawLocale)) notFound();
-  const parsed = parseOfferId(offerId);
+  const parsed = await resolvePublicOfferId(offerId);
   if (!parsed || !query.ref || !/^TV-\d{8}-\d{4}$/.test(query.ref)) notFound();
   const locale: Locale = rawLocale;
   const t = await getTranslations({locale, namespace: "Booking"});

@@ -9,7 +9,7 @@ export type Category = {
   id: string;
   name: string;
   description: string;
-  photo: string;
+  photo: string | null;
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
@@ -17,6 +17,16 @@ export type Category = {
 
 type ActionResult = {success: boolean; error?: string; category?: Category};
 const apiBaseUrl = () => (process.env.API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
+
+export async function getPublicCategories(): Promise<Category[]> {
+  try {
+    const response = await fetch(`${apiBaseUrl()}/API/V1/categories`, {cache: "no-store"});
+    const result = await response.json().catch(() => null);
+    return response.ok && Array.isArray(result?.categories) ? result.categories : [];
+  } catch {
+    return [];
+  }
+}
 
 async function apiRequest(path: string, method: string, body?: FormData) {
   const cookieStore = await cookies();
