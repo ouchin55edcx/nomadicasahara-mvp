@@ -1,14 +1,13 @@
-import {useLocale, useTranslations} from "next-intl";
+import {getTranslations} from "next-intl/server";
 
 import BrandLogo from "@/components/layout/BrandLogo";
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import {Link} from "@/i18n/navigation";
-import {categoryHref} from "@/lib/hrefs";
-import type {Locale} from "@/i18n/routing";
+import {getPublicCategories} from "@/app/actions/categories";
 
-export default function Footer() {
-  const t = useTranslations();
-  const locale = useLocale() as Locale;
+export default async function Footer() {
+  const t = await getTranslations();
+  const categories = await getPublicCategories();
 
   const empresa = [
     {label: t("footer.company.about"), href: "/about" as const},
@@ -20,16 +19,6 @@ export default function Footer() {
     {label: t("footer.links.terms"), href: "/terms" as const},
     {label: t("footer.links.privacy"), href: "/privacy" as const},
   ];
-  const footerNavigation = [
-    {key: "desert", href: categoryHref("desert", locale)},
-    {key: "saidiaBeach", href: categoryHref("saidia-beach", locale)},
-    {key: "privateTours", href: categoryHref("private-tours", locale)},
-    {key: "airportTransfers", href: categoryHref("transfers", locale)},
-    {key: "dinnerShows", href: categoryHref("dinner-shows", locale)},
-    {key: "hammamSpa", href: categoryHref("hammam-spa", locale)},
-    {key: "multiDay", href: categoryHref("circuits", locale)},
-  ];
-
   const socials = [
     {
       name: "Instagram",
@@ -53,8 +42,8 @@ export default function Footer() {
     <footer className="site-footer">
       <nav className="site-footer-nav" aria-label={t("common.mainNavigation")}>
         <div className="site-footer-nav-inner">
-          {footerNavigation.map((item) => (
-            <Link key={item.key} href={item.href}>{t(`nav.items.${item.key}`)}</Link>
+          {categories.map((category) => (
+            <Link key={category.id} href={{pathname: "/tours", query: {category: category.name}}}>{category.name}</Link>
           ))}
         </div>
       </nav>
@@ -107,7 +96,7 @@ export default function Footer() {
 
         <nav className="site-footer-column">
           <h3>{t("footer.redesign.ourBrands")}</h3>
-          <ul>{footerNavigation.slice(0, 4).map((item) => <li key={item.key}><Link href={item.href}>{t(`nav.items.${item.key}`)}</Link></li>)}</ul>
+          <ul>{categories.slice(0, 4).map((category) => <li key={category.id}><Link href={{pathname: "/tours", query: {category: category.name}}}>{category.name}</Link></li>)}</ul>
         </nav>
 
         <div className="site-footer-column site-footer-newsletter">

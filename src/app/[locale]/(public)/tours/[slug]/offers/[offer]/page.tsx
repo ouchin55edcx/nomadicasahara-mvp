@@ -2,7 +2,7 @@ import {notFound, permanentRedirect} from "next/navigation";
 import type {Locale} from "@/i18n/routing";
 import {getPublicProductBySlug} from "@/app/actions/catalog";
 import TourDetailView, {buildTourMetadata} from "@/components/tour-detail/TourExperiencePage";
-import {getTourPhotos, isLocale, resolveTier} from "@/lib/tour-route";
+import {isLocale, resolveTier} from "@/lib/tour-route";
 import {localizedTourPath} from "@/lib/hrefs";
 import {parseOfferQuery} from "@/lib/tour-query";
 
@@ -34,5 +34,5 @@ export default async function TourOfferRoute({params, searchParams}: Props) {
   if (!tour) notFound();
   if (tour.pricing.kind !== "offers") permanentRedirect(localizedTourPath(locale, tour, "detail"));
   const tier = resolveTier(offer, locale, tour);
-  return <TourDetailView tour={tour} mode="tier" tier={tier} imagePaths={getTourPhotos(tour.id)} offerState={parseOfferQuery(query, tour)} />;
+  return <TourDetailView tour={tour} mode="tier" tier={tier} imagePaths={tour.gallery.length ? tour.gallery : [tour.image]} offerState={parseOfferQuery(query, tour)} />;
 }

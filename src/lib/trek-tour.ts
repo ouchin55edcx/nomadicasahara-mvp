@@ -1,6 +1,4 @@
 import type {L10n, Tier, TourRecord} from "@/types/tour-catalog";
-import {allTourRecords} from "@/data/static/tour-catalog";
-import {resolveTour} from "@/lib/tour-route";
 import {notFound} from "next/navigation";
 
 const locales = ["en", "es", "pt"] as const;
@@ -52,8 +50,6 @@ export async function loadTourBySlug(slug: string): Promise<TourRecord> {
       const result = await response.json();
       if (result?.trek) return trekToTour(result.trek);
     }
-  } catch { /* Keep static tour pages available when the trek API is unreachable. */ }
-  const staticTour = allTourRecords.find((tour) => tour.slug === slug);
-  if (staticTour) return staticTour;
+  } catch { /* The public page requires a live trek record. */ }
   return notFound();
 }

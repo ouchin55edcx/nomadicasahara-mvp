@@ -1,6 +1,6 @@
 "use server";
 
-import type {TourRecord, L10n} from "@/types/tour-catalog";
+import type {TourRecord, L10n, Tier} from "@/types/tour-catalog";
 
 const apiBaseUrl = () => (process.env.API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
 const localized = (value: unknown): L10n => {
@@ -17,6 +17,7 @@ export type PublicProduct = TourRecord & {
   currency: string;
   rating: number | null;
   reviewCount: number;
+  gallery: string[];
 };
 
 type ProductRow = {
@@ -28,6 +29,7 @@ type ProductRow = {
   destination: string;
   image: string;
   gallery?: string[];
+  pricing_options?: unknown;
   price: number | string;
   currency?: string;
   rating?: number | string | null;
@@ -70,6 +72,20 @@ function toTour(row: ProductRow): PublicProduct {
     };
   });
   const type = String(row.type || "activity");
+  const options = row.pricing_options && typeof row.pricing_options === "object"
+    ? row.pricing_options as {unit?: string; tiers?: Partial<Record<"economic" | "standard" | "premium", number | string>>; tierSummary?: Partial<Record<"economic" | "standard" | "premium", string>>}
+    : null;
+  const tierNames = ["economic", "standard", "premium"] as const satisfies readonly Tier[];
+  const validTiers = options?.tiers && tierNames.every((tier) => Number.isFinite(Number(options.tiers?.[tier])) && Number(options.tiers?.[tier]) >= 0);
+  const pricing = validTiers
+    ? {
+        kind: "offers" as const,
+        unit: (["person", "vehicle", "group", "ticket"].includes(options?.unit || "") ? options?.unit : "person") as "person" | "vehicle" | "group" | "ticket",
+        tiers: Object.fromEntries(tierNames.map((tier) => [tier, Number(options?.tiers?.[tier])])) as Record<typeof tierNames[number], number>,
+        features: [],
+        tierSummary: Object.fromEntries(tierNames.map((tier) => [tier, localized(options?.tierSummary?.[tier] || tier)])) as Record<typeof tierNames[number], L10n>,
+      }
+    : {kind: "single" as const, unit: type === "private-tour" ? "vehicle" as const : type === "hotel" ? "group" as const : "person" as const, amount: Number(row.price || 0)};
   const detailBits = [row.menu_type, row.treatment, row.treatment_duration, row.meeting_point, row.time, row.private_group_size]
     .filter(Boolean).map((value) => localized(value));
 
@@ -84,7 +100,7 @@ function toTour(row: ProductRow): PublicProduct {
     startPlace: localized(row.location || row.destination || "Marrakech"),
     duration: localized(duration),
     ...(Number(row.duration_hours) >= 24 ? {durationDays: Math.ceil(Number(row.duration_hours) / 24)} : {}),
-    pricing: {kind: "single", unit: type === "private-tour" ? "vehicle" : type === "hotel" ? "group" : "person", amount: Number(row.price || 0)},
+    pricing,
     details: {
       layout: type === "hammam" ? "wellness" : type === "hotel" ? "service" : "day-tour",
       highlights: detailBits,
@@ -105,6 +121,7 @@ function toTour(row: ProductRow): PublicProduct {
     rating: numericRating,
     reviewCount: Number(row.review_count || 0),
     currency: String(row.currency || "EUR"),
+    gallery: Array.isArray(row.gallery) ? row.gallery.filter((url): url is string => typeof url === "string" && Boolean(url.trim())) : [],
   };
 }
 

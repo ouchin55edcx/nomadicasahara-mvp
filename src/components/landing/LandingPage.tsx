@@ -2,12 +2,13 @@
 import React, {useEffect, useRef, useState} from "react";
 import Image from "next/image";
 import {useLocale, useTranslations} from "next-intl";
-import { CarFront, ChevronLeft, ChevronRight, Compass, MapPin, Sparkles, Utensils, Waves } from "lucide-react";
+import { ChevronLeft, ChevronRight, Compass, MapPin, Sparkles, Utensils, Waves } from "lucide-react";
 import TourCard from "@/components/TourCard";
 import {getPublicProducts, type PublicProduct} from "@/app/actions/catalog";
+import {getPublicCategories, type Category} from "@/app/actions/categories";
 import type {TourRecord} from "@/types/tour-catalog";
 import {Link} from "@/i18n/navigation";
-import {categoryHref, destinationHref, localizedCategoryPath, localizedToursPath, tourHref} from "@/lib/hrefs";
+import {localizedToursPath, tourHref} from "@/lib/hrefs";
 import type {Locale} from "@/i18n/routing";
 
 /* ============================================================
@@ -111,30 +112,23 @@ const heroSlides = [
 ];
 
 const cheapest = (tour: TourRecord) => tour.pricing.kind === "quote" ? Infinity : tour.pricing.kind === "single" ? tour.pricing.amount : Math.min(...Object.values(tour.pricing.tiers));
-const eligeTuViaje = [
-  {img: IMG.puente, label: "AGAFAY", action: "Aventura", city: "agafay" as const},
-  {img: IMG.parques, label: "MERZOUGA", action: "Descubre", city: "merzouga" as const},
-  {img: IMG.circuitos, label: "RUTA DE KASBAHS", action: "Explora", category: "circuits" as const},
-  {img: IMG.familias, label: "MARRAKECH", action: "Conócela", city: "marrakech" as const},
-  {img: IMG.grancanaria, label: "SAIDIA", action: "Escápate", category: "saidia-beach" as const},
-  {img: IMG.jovenes, label: "HAMMAM Y SPA", action: "Relájate", category: "hammam-spa" as const},
-];
-
 const guiasViaje = [
   { img: IMG.costasol, title: "Costa del Sol", sub: "El eterno verano" },
   { img: IMG.costaluz, title: "Costa de la Luz", sub: "Costas de Cádiz y Huelva" },
   { img: IMG.lisboa, title: "Lisboa", sub: "Un tranvía de saudade" },
 ];
 
-const tabSpecs = [
-  {key: "desert", category: "desert" as const, icon: Waves},
-  {key: "saidiaBeach", category: "saidia-beach" as const, icon: Compass},
-  {key: "privateTours", category: "private-tours" as const, icon: Compass},
-  {key: "airportTransfers", category: "transfers" as const, icon: CarFront},
-  {key: "dinnerShows", category: "dinner-shows" as const, icon: Utensils},
-  {key: "hammamSpa", category: "hammam-spa" as const, icon: Sparkles},
-  {key: "multiDay", category: "circuits" as const, icon: Compass},
-];
+function categoryIcon(name: string) {
+  const value = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (value.includes("desiert") || value.includes("desert")) return Waves;
+  if (value.includes("cena") || value.includes("espectac")) return Utensils;
+  if (value.includes("hammam") || value.includes("spa")) return Sparkles;
+  return Compass;
+}
+
+function normalize(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
 
 function ActivityProductRail({
   products: items,
@@ -197,14 +191,14 @@ function SearchSelect({ name, children }: { name: string; children: React.ReactN
 
 export default function LandingPage() {
   const [products, setProducts] = useState<PublicProduct[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [activeTab, setActiveTab] = useState(0);
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const activeHero = heroSlides[activeHeroIndex];
   const locale = useLocale() as Locale;
   const sectionT = useTranslations("homeActivitySections");
-  const navT = useTranslations("nav.items");
   const routeT = useTranslations("RoutePages");
-  const searchTabs = tabSpecs.map((tab) => ({...tab, label: navT(tab.key), path: localizedCategoryPath(locale, tab.category)}));
+  const searchTabs = categories.map((category) => ({...category, icon: categoryIcon(category.name)}));
   const featuredTours = products.filter((product) => product.featured).slice(0, 6);
   const featuredIds = new Set(featuredTours.map((tour) => tour.id));
   const valueTours = products.filter((tour) => !featuredIds.has(tour.id) && tour.productType !== "hotel" && cheapest(tour) < 50);
@@ -215,7 +209,12 @@ export default function LandingPage() {
 
   useEffect(() => {
     let mounted = true;
-    void getPublicProducts().then((result) => { if (mounted) setProducts(result); });
+    void Promise.all([getPublicProducts(), getPublicCategories()]).then(([productResult, categoryResult]) => {
+      if (mounted) {
+        setProducts(productResult);
+        setCategories(categoryResult);
+      }
+    });
     return () => { mounted = false; };
   }, []);
 
@@ -251,9 +250,10 @@ export default function LandingPage() {
   };
 
   const renderSearchFields = () => {
+    const destinations = [...new Set(products.map((product) => product.destination[locale]).filter(Boolean))];
     return <>
       <SearchField label={routeT("search")}><input className="search-control" type="search" name="q" placeholder={routeT("allTours")} /></SearchField>
-      <SearchField label={routeT("city")}><SearchSelect name="city"><option value="">{routeT("allCities")}</option><option value="agafay">Agafay</option><option value="zagora">Zagora</option><option value="merzouga">Merzouga</option><option value="marrakech">{locale === "pt" ? "Marraquexe" : "Marrakech"}</option></SearchSelect></SearchField>
+      <SearchField label={routeT("city")}><SearchSelect name="city"><option value="">{routeT("allCities")}</option>{destinations.map((destination) => <option key={destination} value={destination}>{destination}</option>)}</SearchSelect></SearchField>
       <SearchField label={routeT("days")}><SearchSelect name="days"><option value="">{routeT("anyLength")}</option><option value="short">{routeT("shortTrip")}</option><option value="multi">{routeT("multiDay")}</option></SearchSelect></SearchField>
     </>;
   };
@@ -283,20 +283,21 @@ export default function LandingPage() {
         <section className="search">
           <div className="wrap">
             <div className="search-tabs">
-              {searchTabs.map(({ label, icon: Icon }, i) => (
+              {searchTabs.map(({ name, icon: Icon }, i) => (
                 <button
-                  key={label}
+                  key={name}
                   type="button"
                   role="tab"
                   aria-selected={i === activeTab}
                   className={i === activeTab ? "tab active" : "tab"}
                   onClick={() => setActiveTab(i)}
                 >
-                  <Icon aria-hidden="true" />{label}
+                  <Icon aria-hidden="true" />{name}
                 </button>
               ))}
             </div>
-            <form className="search-form" action={searchTabs[activeTab].path} method="get">
+            <form className="search-form" action={localizedToursPath(locale)} method="get">
+              {searchTabs[activeTab] ? <input type="hidden" name="category" value={searchTabs[activeTab].name} /> : null}
               {renderSearchFields()}
               <button type="submit" className="btn-buscar"><MapPin aria-hidden="true" />BUSCAR</button>
             </form>
@@ -308,14 +309,18 @@ export default function LandingPage() {
           <div className="wrap">
             <h3 className="journey-heading">Elige tu viaje</h3>
             <div className="journey-grid">
-              {eligeTuViaje.map((c) => (
-                <Link key={c.label} href={c.city ? destinationHref(c.city, locale) : categoryHref(c.category!, locale)} className="journey-card" style={{ backgroundImage: `url(${c.img})` }}>
+              {categories.map((category) => {
+                const categoryName = normalize(category.name);
+                const product = products.find((item) => normalize(item.productCategory) === categoryName)
+                  || products.find((item) => normalize(item.productCategory).includes(categoryName) || categoryName.includes(normalize(item.productCategory)));
+                const image = category.photo || product?.image || IMG.hero;
+                return <Link key={category.id} href={{pathname: "/tours", query: {category: category.name}}} className="journey-card" style={{ backgroundImage: `url(${image})` }}>
                   <span className="journey-content">
-                    <span className="journey-title">{c.label}</span>
-                    <span className="journey-action">{c.action}<span aria-hidden="true">›</span></span>
+                    <span className="journey-title">{category.name}</span>
+                    <span className="journey-action">{category.description || category.name}<span aria-hidden="true">›</span></span>
                   </span>
-                </Link>
-              ))}
+                </Link>;
+              })}
             </div>
           </div>
         </section>

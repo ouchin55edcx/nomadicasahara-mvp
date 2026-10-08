@@ -2,7 +2,7 @@ import {notFound, permanentRedirect} from "next/navigation";
 import {getPublicProductBySlug} from "@/app/actions/catalog";
 import OffersComparisonPage from "@/components/tour-detail/OffersComparisonPage";
 import {buildTourMetadata} from "@/components/tour-detail/TourExperiencePage";
-import {getTourPhotos, isLocale} from "@/lib/tour-route";
+import {isLocale} from "@/lib/tour-route";
 import {localizedTourPath} from "@/lib/hrefs";
 import {parseOfferQuery} from "@/lib/tour-query";
 import type {Locale} from "@/i18n/routing";
@@ -29,5 +29,5 @@ export default async function TourOffersRoute({params, searchParams}: Props) {
   const tour = await getPublicProductBySlug(slug);
   if (!tour) notFound();
   if (tour.pricing.kind !== "offers") permanentRedirect(localizedTourPath(locale, tour, "detail"));
-  return <OffersComparisonPage tour={tour as Extract<typeof tour, {pricing: {kind: "offers"}}>} locale={locale} imagePaths={getTourPhotos(tour.id)} state={parseOfferQuery(query, tour)} />;
+  return <OffersComparisonPage tour={tour as Extract<typeof tour, {pricing: {kind: "offers"}}>} locale={locale} imagePaths={tour.gallery.length ? tour.gallery : [tour.image]} state={parseOfferQuery(query, tour)} />;
 }

@@ -1,7 +1,7 @@
 import {notFound, permanentRedirect} from "next/navigation";
 import {getPublicProductBySlug} from "@/app/actions/catalog";
 import TourDetailView, {buildTourMetadata} from "@/components/tour-detail/TourExperiencePage";
-import {getTourPhotos, isLocale} from "@/lib/tour-route";
+import {isLocale} from "@/lib/tour-route";
 import {localizedTourPath} from "@/lib/hrefs";
 import {parseOfferQuery} from "@/lib/tour-query";
 import type {Locale} from "@/i18n/routing";
@@ -28,5 +28,5 @@ export default async function TourDetailRoute({params, searchParams}: Props) {
   const tour = await getPublicProductBySlug(slug);
   if (!tour) notFound();
   if (tour.pricing.kind === "offers") permanentRedirect(localizedTourPath(locale, tour, "offers"));
-  return <TourDetailView tour={tour} mode="detail" imagePaths={getTourPhotos(tour.id)} offerState={parseOfferQuery(query, tour)} />;
+  return <TourDetailView tour={tour} mode="detail" imagePaths={tour.gallery.length ? tour.gallery : [tour.image]} offerState={parseOfferQuery(query, tour)} />;
 }
